@@ -4,10 +4,13 @@
 # Apoorv Vyas <avyas@idiap.ch>
 #
 
-"""Implement unmasked linear attention."""
+"""Implement causally masked linear attention."""
 
 import torch
 from torch.nn import Module
+from typing import Union
+
+from fast_transformers.attention.causal_product import causal_dot_product
 
 
 def elu_feature_map(x):
@@ -15,56 +18,42 @@ def elu_feature_map(x):
 
 
 class LinearAttention(Module):
-    """Implement unmasked attention using dot product of feature maps in
-    O(N D^2) complexity.
-
-    Given the queries, keys and values as Q, K, V instead of computing
-
-        V' = softmax(Q.mm(K.t()), dim=-1).mm(V),
-
-    we make use of a feature map function Φ(.) and perform the following
-    computation
-
-        V' = normalize(Φ(Q).mm(Φ(K).t())).mm(V).
-
-    The above can be computed in O(N D^2) complexity where D is the
-    dimensionality of Q, K and V and N is the sequence length. Depending on the
-    feature map, however, the complexity of the attention might be limited.
-
-    Arguments
-    ---------
-        feature_map: callable, a callable that applies the feature map to the
-                     last dimension of a tensor (default: elu(x)+1)
-        eps: float, a small number to ensure the numerical stability of the
-             denominator (default: 1e-6)
-    """
-    def __init__(self, feature_map=None, eps=1e-6):
+    def __init__(self, feature_map=elu_feature_map, eps=1e-6):
         super(LinearAttention, self).__init__()
-        self.feature_map = feature_map or elu_feature_map
+        self.feature_map = feature_map
         self.eps = eps
 
-    def forward(self, queries, keys, values, attn_mask, query_lengths,
-                key_lengths):
-        # Apply the feature map to the queries and keys
-        Q = self.feature_map(queries)
-        K = self.feature_map(keys)
+    def forward(self, queries, keys, values, mask: Union[str, torch.Tensor] = "causal"):
 
-        # Apply the key padding mask and make sure that the attn_mask is
-        # all_ones
-        if not attn_mask.all_ones:
-            raise RuntimeError(("LinearAttention does not support arbitrary "
-                                "attention masks"))
-        K = K * key_lengths.float_matrix[:, :, None, None]
+        q = self.feature_map(queries)
+        k = self.feature_map(keys)
 
-        # Compute the KV matrix, namely the dot product of keys and values so
-        # that we never explicitly compute the attention matrix and thus
-        # decrease the complexity
-        KV = torch.einsum("nshd,nshm->nhmd", K, values)
+        if mask == "causal":
+            z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
+            v = self.causal_linear(q, k, values)
+            return v / z.unsqueeze(-1)
+        else:
+            k = k * mask.view(mask.size(0), mask.size(1), 1, 1)
 
-        # Compute the normalizer
-        Z = 1/(torch.einsum("nlhd,nhd->nlh", Q, K.sum(dim=1))+self.eps)
+            kv = torch.einsum("nshd,nshm->nhmd", k, values)
+            z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
+            return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z)
 
-        # Finally compute and return the new values
-        V = torch.einsum("nlhd,nhmd,nlh->nlhm", Q, KV, Z)
+    @staticmethod
+    def causal_linear(q, k, v):
+        q = q.permute(0, 2, 1, 3).contiguous()
+        k = k.permute(0, 2, 1, 3).contiguous()
+        v = v.permute(0, 2, 1, 3).contiguous()
+        V_new = causal_dot_product(q, k, v)
+        return V_new.permute(0, 2, 1, 3).contiguous()
 
-        return V.contiguous()
+
+if __name__ == "__main__":
+    torch.manual_seed(100)
+    att = LinearAttention()
+    x = torch.randn(1, 3, 2, 10)
+    y = torch.randn(1, 4, 2, 10)
+    z = torch.randn(1, 4, 2, 10)
+
+    print(att(x, y, z, torch.tensor([[1.0, 1, 1, 0]])).mean(-1))
+    print(att(x, y[:, :3], z[:, :3], torch.tensor([[1.0, 1, 1]])).mean(-1))

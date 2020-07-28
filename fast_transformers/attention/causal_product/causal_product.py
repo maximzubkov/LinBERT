@@ -74,5 +74,4 @@ class CausalDotProduct(torch.autograd.Function):
         return grad_Q, grad_K, grad_V
 
 
-# Alias the autograd functions to python style snake case naming
 causal_dot_product = CausalDotProduct.apply

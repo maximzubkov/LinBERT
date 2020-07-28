@@ -54,93 +54,16 @@ def collect_metadata():
 def get_extensions():
     extensions = [
         CppExtension(
-            "fast_transformers.hashing.hash_cpu",
-            sources=[
-                "fast_transformers/hashing/hash_cpu.cpp"
-            ],
-            extra_compile_args=["-fopenmp", "-ffast-math"]
-        ),
-        CppExtension(
-            "fast_transformers.aggregate.aggregate_cpu",
-            sources=[
-               "fast_transformers/aggregate/aggregate_cpu.cpp" 
-            ],
-            extra_compile_args=["-fopenmp", "-ffast-math"]
-        ),
-        CppExtension(
-            "fast_transformers.clustering.hamming.cluster_cpu",
-            sources=[
-               "fast_transformers/clustering/hamming/cluster_cpu.cpp"
-            ],
-            extra_compile_args=["-fopenmp", "-ffast-math"]
-        ),
-        CppExtension(
-            "fast_transformers.sparse_product.sparse_product_cpu",
-            sources=[
-                "fast_transformers/sparse_product/sparse_product_cpu.cpp"
-            ],
-            extra_compile_args=["-fopenmp", "-ffast-math"]
-        ),
-        CppExtension(
-            "fast_transformers.sparse_product.clustered_sparse_product_cpu",
-            sources=[
-                "fast_transformers/sparse_product/clustered_sparse_product_cpu.cpp"
-            ],
-            extra_compile_args=["-fopenmp", "-ffast-math"]
-        ),
-        CppExtension(
             "fast_transformers.causal_product.causal_product_cpu",
             sources=[
                 "fast_transformers/causal_product/causal_product_cpu.cpp"
             ],
-            extra_compile_args=["-fopenmp", "-ffast-math"]
+            extra_compile_args=["-Xpreprocessor", "-fopenmp", "-ffast-math"]
         )
     ]
     if cuda_toolkit_available():
         from torch.utils.cpp_extension import CUDAExtension
         extensions += [
-            CUDAExtension(
-                "fast_transformers.hashing.hash_cuda",
-                sources=[
-                    "fast_transformers/hashing/hash_cuda.cu",
-                ],
-                extra_compile_args=["-arch=compute_50"]
-            ),
-            CUDAExtension(
-                "fast_transformers.aggregate.aggregate_cuda",
-                sources=[
-                    "fast_transformers/aggregate/aggregate_cuda.cu"
-                ],
-                extra_compile_args=["-arch=compute_50"]
-            ),
-            CUDAExtension(
-                "fast_transformers.aggregate.clustered_broadcast_cuda",
-                sources=[
-                    "fast_transformers/aggregate/clustered_broadcast_cuda.cu"
-                ],
-                extra_compile_args=["-arch=compute_50"]
-            ),
-            CUDAExtension(
-                "fast_transformers.clustering.hamming.cluster_cuda",
-                sources=[
-                    "fast_transformers/clustering/hamming/cluster_cuda.cu"
-                ],
-                extra_compile_args=["-arch=compute_50"]
-            ),
-            CUDAExtension(
-                "fast_transformers.sparse_product.sparse_product_cuda",
-                sources=[
-                    "fast_transformers/sparse_product/sparse_product_cuda.cu"
-                ],
-                extra_compile_args=["-arch=compute_50"]
-            ),
-            CUDAExtension(
-                "fast_transformers.sparse_product.clustered_sparse_product_cuda",
-                sources=[
-                    "fast_transformers/sparse_product/clustered_sparse_product_cuda.cu"
-                ],
-                extra_compile_args=["-arch=compute_50"]
-            ),
             CUDAExtension(
                 "fast_transformers.causal_product.causal_product_cuda",
                 sources=[
@@ -156,6 +79,7 @@ def setup_package():
     with open("README.rst") as f:
         long_description = f.read()
     meta = collect_metadata()
+    print(meta)
     setup(
         name="pytorch-fast-transformers",
         version=meta["version"],
