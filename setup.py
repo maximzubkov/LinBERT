@@ -54,9 +54,9 @@ def collect_metadata():
 def get_extensions():
     extensions = [
         CppExtension(
-            "fast_transformers.causal_product.causal_product_cpu",
+            "fast_transformers.attention.causal_product.causal_product_cpu",
             sources=[
-                "fast_transformers/causal_product/causal_product_cpu.cpp"
+                "fast_transformers/attention/causal_product/causal_product_cpu.cpp"
             ],
             extra_compile_args=["-Xpreprocessor", "-fopenmp", "-ffast-math"]
         )
@@ -65,9 +65,9 @@ def get_extensions():
         from torch.utils.cpp_extension import CUDAExtension
         extensions += [
             CUDAExtension(
-                "fast_transformers.causal_product.causal_product_cuda",
+                "fast_transformers.attention.causal_product.causal_product_cuda",
                 sources=[
-                    "fast_transformers/causal_product/causal_product_cuda.cu"
+                    "fast_transformers/attention/causal_product/causal_product_cuda.cu"
                 ],
                 extra_compile_args=["-arch=compute_50"]
             )

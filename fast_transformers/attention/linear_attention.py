@@ -39,6 +39,31 @@ class LinearAttention(Module):
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
             return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z)
 
+    def recurrent(self, query, key, value, memory=None):
+        q = self.feature_map(query)
+        k = self.feature_map(key)
+
+        b_s, n_heads, q_s = q.size()
+        _, _, v_s = value.size()
+
+        if memory is None:
+            s_i = query.new_zeros((b_s, n_heads, q_s, v_s))
+            z_i = query.new_zeros((b_s, n_heads, q_s))
+        else:
+            s_i, z_i = memory
+
+        if z_i.requires_grad or s_i.requires_grad:
+            z_i = z_i + k
+            s_i = s_i + torch.einsum("nhd,nhm->nhdm", k, value)
+        else:
+            z_i += k
+            s_i += torch.einsum("nhd,nhm->nhdm", k, value)
+
+        z = torch.einsum("nhd,nhd->nh", q, z_i) + self.eps
+        v = torch.einsum("nhd,nhdm,nh->nhm", q, s_i, 1 / z)
+
+        return v, [s_i, z_i]
+
     @staticmethod
     def causal_linear(q, k, v):
         q = q.permute(0, 2, 1, 3).contiguous()
@@ -51,9 +76,12 @@ class LinearAttention(Module):
 if __name__ == "__main__":
     torch.manual_seed(100)
     att = LinearAttention()
-    x = torch.randn(1, 3, 2, 10)
+    x = torch.randn(1, 4, 2, 10)
     y = torch.randn(1, 4, 2, 10)
     z = torch.randn(1, 4, 2, 10)
 
-    print(att(x, y, z, torch.tensor([[1.0, 1, 1, 0]])).mean(-1))
-    print(att(x, y[:, :3], z[:, :3], torch.tensor([[1.0, 1, 1]])).mean(-1))
+    print(att(x, y, z, "causal").mean(-1))
+    memory = None
+    for i in range(4):
+        res, memory = att.recurrent(x[:, i], y[:, i], z[:, i], memory)
+        print(res.mean(-1))
