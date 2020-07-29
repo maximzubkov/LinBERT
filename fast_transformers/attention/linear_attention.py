@@ -6,9 +6,10 @@
 
 """Implement causally masked linear attention."""
 
+from typing import Union
+
 import torch
 from torch.nn import Module
-from typing import Union
 
 from fast_transformers.attention.causal_product import causal_dot_product
 
@@ -23,46 +24,38 @@ class LinearAttention(Module):
         self.feature_map = feature_map
         self.eps = eps
 
-    def forward(self, queries, keys, values, mask: Union[str, torch.Tensor] = "causal"):
+    def forward(self, q, k, v, mask: Union[str, torch.Tensor] = "causal"):
 
-        q = self.feature_map(queries)
-        k = self.feature_map(keys)
+        q = self.feature_map(q)
+        k = self.feature_map(k)
 
         if mask == "causal":
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
-            v = self.causal_linear(q, k, values)
+            v = self.causal_linear(q, k, v)
             return v / z.unsqueeze(-1)
         else:
             k = k * mask.view(mask.size(0), mask.size(1), 1, 1)
 
-            kv = torch.einsum("nshd,nshm->nhmd", k, values)
+            kv = torch.einsum("nshd,nshm->nhmd", k, v)
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
             return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z)
 
-    def recurrent(self, query, key, value, memory=None):
-        q = self.feature_map(query)
-        k = self.feature_map(key)
+    def recurrent(self, q, k, v, memory=None):
+        q = self.feature_map(q)
+        k = self.feature_map(k)
 
-        b_s, n_heads, q_s = q.size()
-        _, _, v_s = value.size()
-
-        if memory is None:
-            s_i = query.new_zeros((b_s, n_heads, q_s, v_s))
-            z_i = query.new_zeros((b_s, n_heads, q_s))
-        else:
-            s_i, z_i = memory
-
+        s_i, z_i = memory
         if z_i.requires_grad or s_i.requires_grad:
             z_i = z_i + k
-            s_i = s_i + torch.einsum("nhd,nhm->nhdm", k, value)
+            s_i = s_i + torch.einsum("nhd,nhm->nhdm", k, v)
         else:
             z_i += k
-            s_i += torch.einsum("nhd,nhm->nhdm", k, value)
+            s_i += torch.einsum("nhd,nhm->nhdm", k, v)
 
         z = torch.einsum("nhd,nhd->nh", q, z_i) + self.eps
         v = torch.einsum("nhd,nhdm,nh->nhm", q, s_i, 1 / z)
 
-        return v, [s_i, z_i]
+        return v, (s_i, z_i)
 
     @staticmethod
     def causal_linear(q, k, v):

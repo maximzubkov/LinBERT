@@ -6,13 +6,16 @@
 
 import torch
 
-from .causal_product_cpu import causal_dot_product as causal_dot_product_cpu, \
-    causal_dot_backward as causal_dot_backward_cpu
+from .causal_product_cpu import (
+    causal_dot_product as causal_dot_product_cpu,
+    causal_dot_backward as causal_dot_backward_cpu,
+)
 
 try:
-    from .causal_product_cuda import \
-        causal_dot_product as causal_dot_product_cuda, \
-        causal_dot_backward as causal_dot_backward_cuda
+    from .causal_product_cuda import (
+        causal_dot_product as causal_dot_product_cuda,
+        causal_dot_backward as causal_dot_backward_cuda,
+    )
 except ImportError:
     causal_dot_product_cuda = causal_dot_backward_cuda = None
 
@@ -20,14 +23,9 @@ except ImportError:
 class CausalDotProduct(torch.autograd.Function):
     """Compute the weighted sum of values but attending only to previous
     values."""
-    dot = {
-        "cpu": causal_dot_product_cpu,
-        "cuda": causal_dot_product_cuda
-    }
-    dot_backward = {
-        "cpu": causal_dot_backward_cpu,
-        "cuda": causal_dot_backward_cuda
-    }
+
+    dot = {"cpu": causal_dot_product_cpu, "cuda": causal_dot_product_cuda}
+    dot_backward = {"cpu": causal_dot_backward_cpu, "cuda": causal_dot_backward_cuda}
 
     @staticmethod
     def forward(ctx, Q, K, V):
@@ -41,12 +39,7 @@ class CausalDotProduct(torch.autograd.Function):
         product = torch.zeros((N, H, L, M), device=device)
 
         # Actually perform the dot product
-        CausalDotProduct.dot[device.type](
-            Q.data,
-            K.data,
-            V.data,
-            product
-        )
+        CausalDotProduct.dot[device.type](Q.data, K.data, V.data, product)
 
         return product
 
@@ -62,13 +55,7 @@ class CausalDotProduct(torch.autograd.Function):
 
         # Actually compute the gradients
         CausalDotProduct.dot_backward[Q.device.type](
-            Q.data,
-            K.data,
-            V.data,
-            grad_out,
-            grad_Q,
-            grad_K,
-            grad_V
+            Q.data, K.data, V.data, grad_out, grad_Q, grad_K, grad_V
         )
 
         return grad_Q, grad_K, grad_V

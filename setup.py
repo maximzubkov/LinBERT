@@ -10,10 +10,9 @@
 from functools import lru_cache
 from itertools import dropwhile
 from os import path
-from setuptools import find_packages, setup
 from subprocess import DEVNULL, call
 
-import torch
+from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 
@@ -58,18 +57,19 @@ def get_extensions():
             sources=[
                 "fast_transformers/attention/causal_product/causal_product_cpu.cpp"
             ],
-            extra_compile_args=["-Xpreprocessor", "-fopenmp", "-ffast-math"]
+            extra_compile_args=["-Xpreprocessor", "-fopenmp", "-ffast-math"],
         )
     ]
     if cuda_toolkit_available():
         from torch.utils.cpp_extension import CUDAExtension
+
         extensions += [
             CUDAExtension(
                 "fast_transformers.attention.causal_product.causal_product_cuda",
                 sources=[
                     "fast_transformers/attention/causal_product/causal_product_cuda.cu"
                 ],
-                extra_compile_args=["-arch=compute_50"]
+                extra_compile_args=["-arch=compute_50"],
             )
         ]
     return extensions
@@ -102,7 +102,7 @@ def setup_package():
         packages=find_packages(exclude=["docs", "tests", "scripts", "examples"]),
         ext_modules=get_extensions(),
         cmdclass={"build_ext": BuildExtension},
-        install_requires=["torch"]
+        install_requires=["torch"],
     )
 
 

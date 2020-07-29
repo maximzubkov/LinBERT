@@ -30,35 +30,28 @@ class MultiHeadAttention(nn.Module):
 
         result = self.attention(q, k, v, mask)
         result = self.fc(result.flatten(2))
-        print(result.size())
 
         return residual + self.dropout(result)
+
+    def recurrent(self, q, k, v, memory=None):
+        residual = q
+
+        q = self.split_heads(self.q(q)).squeeze(1)
+        k = self.split_heads(self.k(k)).squeeze(1)
+        v = self.split_heads(self.v(v)).squeeze(1)
+
+        if memory is None:
+            b_s = q.size(0)
+            s_i = q.new_zeros((b_s, self.n_heads, self.p_s, self.p_s))
+            z_i = q.new_zeros((b_s, self.n_heads, self.p_s))
+
+            memory = (s_i, z_i)
+
+        result, memory = self.attention.recurrent(q, k, v, memory)
+        result = self.fc(result.unsqueeze(1).flatten(2))
+
+        return residual + self.dropout(result), memory
 
     def split_heads(self, input):
         b_s, s_l, _ = input.size()
         return input.view(b_s, s_l, self.n_heads, self.p_s)
-
-
-# if __name__ == "__main__":
-#     import torch
-#
-#     att = MultiHeadAttention(2, 4, dropout=0.0)
-#     # x = torch.randn(2, 5, 4)
-#     # print(att(x, x, x, "causal"))
-#     # print("__")
-#     # print(att(x[:, :4], x[:, :4], x[:, :4], "causal"))
-#     # print("__")
-#     # print(att(x[:, :2], x[:, :2], x[:, :2], "causal"))
-#     # print("__")
-#
-#     x = torch.randn(2, 5, 4)
-#     print(att(x, x, x, mask=torch.LongTensor([[1, 1, 1, 1, 0], [1, 0, 0, 0, 0]])))
-#     print("__")
-#     print(att(x, x, x, mask=torch.LongTensor([[1, 1, 1, 0, 0], [1, 0, 0, 0, 0]])))
-#     print("__")
-#     print(att(x[:, :4], x[:, :4], x[:, :4], mask=torch.LongTensor([[1, 1, 1, 0], [1, 0, 0, 0]])))
-#     print("__")
-#     print(att(x[:, :3], x[:, :3], x[:, :3], mask=torch.LongTensor([[1, 1, 1], [1, 0, 0]])))
-#     print("__")
-#     print(att(x[:, :2], x[:, :2], x[:, :2], mask=torch.LongTensor([[1, 1], [1, 0]])))
-#     print("__")
