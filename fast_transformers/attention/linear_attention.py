@@ -64,17 +64,3 @@ class LinearAttention(Module):
         v = v.permute(0, 2, 1, 3).contiguous()
         V_new = causal_dot_product(q, k, v)
         return V_new.permute(0, 2, 1, 3).contiguous()
-
-
-if __name__ == "__main__":
-    torch.manual_seed(100)
-    att = LinearAttention()
-    x = torch.randn(1, 4, 2, 10)
-    y = torch.randn(1, 4, 2, 10)
-    z = torch.randn(1, 4, 2, 10)
-
-    print(att(x, y, z, "causal").mean(-1))
-    memory = None
-    for i in range(4):
-        res, memory = att.recurrent(x[:, i], y[:, i], z[:, i], memory)
-        print(res.mean(-1))
