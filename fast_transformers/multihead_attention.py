@@ -1,7 +1,7 @@
 from typing import Optional
 
+import torch
 import torch.nn as nn
-
 from fast_transformers.linear_attention import LinearAttention
 
 
