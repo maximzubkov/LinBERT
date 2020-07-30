@@ -1,6 +1,8 @@
+from typing import Optional
+
 import torch.nn as nn
 
-from fast_transformers.attention.linear_attention import LinearAttention
+from fast_transformers.linear_attention import LinearAttention
 
 
 class MultiHeadAttention(nn.Module):
@@ -21,7 +23,7 @@ class MultiHeadAttention(nn.Module):
         self.fc = nn.Linear(self.n_heads * self.p_s, h_s)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, q, k, v, mask):
+    def forward(self, q, k, v, mask: Optional[torch.Tensor] = None):
         residual = q
 
         q = self.split_heads(self.q(q))

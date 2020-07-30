@@ -4,14 +4,12 @@
 # Apoorv Vyas <avyas@idiap.ch>
 #
 
-"""Implement causally masked linear attention."""
-
-from typing import Union
+from typing import Optional
 
 import torch
 from torch.nn import Module
 
-from fast_transformers.attention.causal_product import causal_dot_product
+from fast_transformers.causal_product import causal_dot_product
 
 
 def elu_feature_map(x):
@@ -24,16 +22,17 @@ class LinearAttention(Module):
         self.feature_map = feature_map
         self.eps = eps
 
-    def forward(self, q, k, v, mask: Union[str, torch.Tensor] = "causal"):
+    def forward(self, q, k, v, mask: Optional[torch.Tensor] = None):
 
         q = self.feature_map(q)
         k = self.feature_map(k)
 
-        if mask == "causal":
+        if mask is None:  # causal attention
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
             v = self.causal_linear(q, k, v)
             return v / z.unsqueeze(-1)
         else:
+            torch.jit._unwrap_optional(mask)
             k = k * mask.view(mask.size(0), mask.size(1), 1, 1)
 
             kv = torch.einsum("nshd,nshm->nhmd", k, v)
