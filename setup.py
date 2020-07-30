@@ -53,9 +53,9 @@ def collect_metadata():
 def get_extensions():
     extensions = [
         CppExtension(
-            "fast_transformers.attention.causal_product.causal_product_cpu",
+            "fast_transformers.causal_product.causal_product_cpu",
             sources=[
-                "fast_transformers/attention/causal_product/causal_product_cpu.cpp"
+                "fast_transformers/causal_product/causal_product_cpu.cpp"
             ],
             extra_compile_args=["-Xpreprocessor", "-fopenmp", "-ffast-math"],
         )
@@ -65,9 +65,9 @@ def get_extensions():
 
         extensions += [
             CUDAExtension(
-                "fast_transformers.attention.causal_product.causal_product_cuda",
+                "fast_transformers.causal_product.causal_product_cuda",
                 sources=[
-                    "fast_transformers/attention/causal_product/causal_product_cuda.cu"
+                    "fast_transformers/causal_product/causal_product_cuda.cu"
                 ],
                 extra_compile_args=["-arch=compute_50"],
             )
@@ -76,20 +76,11 @@ def get_extensions():
 
 
 def setup_package():
-    with open("README.rst") as f:
-        long_description = f.read()
     meta = collect_metadata()
     print(meta)
     setup(
         name="pytorch-fast-transformers",
-        version=meta["version"],
-        description=meta["description"],
-        long_description=long_description,
-        long_description_content_type="text/x-rst",
-        maintainer=meta["maintainer"],
-        maintainer_email=meta["email"],
-        url=meta["url"],
-        license=meta["license"],
+        version="0.0.1",
         classifiers=[
             "Intended Audience :: Science/Research",
             "Intended Audience :: Developers",
