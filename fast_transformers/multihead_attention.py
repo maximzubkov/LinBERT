@@ -35,12 +35,11 @@ class MultiHeadAttention(nn.Module):
 
         return residual + self.dropout(result)
 
-    def recurrent(self, q, memory=None):
-        residual = q
+    def recurrent(self, input, memory=None):
 
-        q = self.split_heads(self.q(q)).squeeze(1)
-        k = self.split_heads(self.k(q)).squeeze(1)
-        v = self.split_heads(self.v(q)).squeeze(1)
+        q = self.split_heads(self.q(input)).squeeze(1)
+        k = self.split_heads(self.k(input)).squeeze(1)
+        v = self.split_heads(self.v(input)).squeeze(1)
 
         if memory is None:
             b_s = q.size(0)
@@ -52,7 +51,7 @@ class MultiHeadAttention(nn.Module):
         result, memory = self.attention.recurrent(q, k, v, memory)
         result = self.fc(result.unsqueeze(1).flatten(2))
 
-        return residual + self.dropout(result), memory
+        return input + self.dropout(result), memory
 
     def split_heads(self, input):
         b_s, s_l, _ = input.size()
