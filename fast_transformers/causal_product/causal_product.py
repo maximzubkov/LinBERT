@@ -28,7 +28,6 @@ class CausalDotProduct(torch.autograd.Function):
     dot_backward = {"cpu": causal_dot_backward_cpu, "cuda": causal_dot_backward_cuda}
 
     @staticmethod
-    @torch.cuda.amp.custom_fwd(cast_inputs=torch.float32)
     def forward(ctx, Q, K, V):
         # Save the inputs for the gradient computation
         ctx.save_for_backward(Q, K, V)
@@ -40,11 +39,13 @@ class CausalDotProduct(torch.autograd.Function):
         product = torch.zeros((N, H, L, M), device=device)
 
         # Actually perform the dot product
-        CausalDotProduct.dot[device.type](Q.data, K.data, V.data, product)
+        with torch.cuda.amp.autocast(enabled=False):
+            CausalDotProduct.dot[device.type](
+                Q.float().data, K.float().data, V.float().data, product.float()
+            )
         return product
 
     @staticmethod
-    @torch.cuda.amp.custom_bwd(cast_inputs=torch.float32)
     def backward(ctx, grad_out):
         # Extract the saved tensors
         Q, K, V = ctx.saved_tensors
@@ -55,9 +56,16 @@ class CausalDotProduct(torch.autograd.Function):
         grad_V = torch.zeros_like(V)
 
         # Actually compute the gradients
-        CausalDotProduct.dot_backward[Q.device.type](
-            Q.data, K.data, V.data, grad_out, grad_Q, grad_K, grad_V
-        )
+        with torch.cuda.amp.autocast(enabled=False):
+            CausalDotProduct.dot_backward[Q.device.type](
+                Q.float().data,
+                K.float().data,
+                V.float().data,
+                grad_out.float(),
+                grad_Q.float(),
+                grad_K.float(),
+                grad_V.float(),
+            )
 
         return grad_Q, grad_K, grad_V
 
