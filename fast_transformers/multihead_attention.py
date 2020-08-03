@@ -35,12 +35,12 @@ class MultiHeadAttention(nn.Module):
 
         return residual + self.dropout(result)
 
-    def recurrent(self, q, k, v, memory=None):
+    def recurrent(self, q, memory=None):
         residual = q
 
         q = self.split_heads(self.q(q)).squeeze(1)
-        k = self.split_heads(self.k(k)).squeeze(1)
-        v = self.split_heads(self.v(v)).squeeze(1)
+        k = self.split_heads(self.k(q)).squeeze(1)
+        v = self.split_heads(self.v(q)).squeeze(1)
 
         if memory is None:
             b_s = q.size(0)
