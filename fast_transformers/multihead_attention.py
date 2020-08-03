@@ -2,6 +2,7 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
+
 from fast_transformers.linear_attention import LinearAttention
 
 
@@ -36,7 +37,6 @@ class MultiHeadAttention(nn.Module):
         return residual + self.dropout(result)
 
     def recurrent(self, input, memory=None):
-
         q = self.split_heads(self.q(input)).squeeze(1)
         k = self.split_heads(self.k(input)).squeeze(1)
         v = self.split_heads(self.v(input)).squeeze(1)
