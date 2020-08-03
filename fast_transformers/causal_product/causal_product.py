@@ -16,6 +16,9 @@ try:
         causal_dot_product as causal_dot_product_cuda,
         causal_dot_backward as causal_dot_backward_cuda,
     )
+    from .causal_product_cuda_half import (
+        causal_dot_product as causal_dot_product_cuda_half,
+    )
 except ImportError:
     causal_dot_product_cuda = causal_dot_backward_cuda = None
 
@@ -24,7 +27,7 @@ class CausalDotProduct(torch.autograd.Function):
     """Compute the weighted sum of values but attending only to previous
     values."""
 
-    dot = {"cpu": causal_dot_product_cpu, "cuda": causal_dot_product_cuda}
+    dot = {"cpu": causal_dot_product_cpu, "cuda": causal_dot_product_cuda, "half": causal_dot_product_cuda_half}
     dot_backward = {"cpu": causal_dot_backward_cpu, "cuda": causal_dot_backward_cuda}
 
     @staticmethod
@@ -39,8 +42,10 @@ class CausalDotProduct(torch.autograd.Function):
         product = torch.zeros((N, H, L, M), device=device)
 
         # Actually perform the dot product
-        CausalDotProduct.dot[device.type](Q.data, K.data, V.data, product)
-
+        if Q.dtype == torch.float32:
+            CausalDotProduct.dot[device.type](Q.data, K.data, V.data, product)
+        elif Q.dtype == torch.float16:
+            CausalDotProduct.dot["half"](Q.data, K.data, V.data, product)
         return product
 
     @staticmethod
