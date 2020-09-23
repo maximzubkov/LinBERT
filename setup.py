@@ -93,7 +93,6 @@ def setup_package():
         packages=find_packages(exclude=["docs", "tests", "scripts", "examples"]),
         ext_modules=get_extensions(),
         cmdclass={"build_ext": BuildExtension},
-        install_requires=["torch"],
     )
 
 
