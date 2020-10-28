@@ -35,8 +35,11 @@ class LinearAttention(Module):
             torch.jit._unwrap_optional(mask)
             k = k * mask.view(mask.size(0), mask.size(1), 1, 1)
 
+            # [batch_size, n_heads, p_s, p_s]
             kv = torch.einsum("nshd,nshm->nhmd", k, v)
+            # [batch_size, target_seq_len, n_heads]
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
+            # [batch_size, target_seq_len, n_heads, p_s]
             return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z)
 
     def recurrent(self, q, k, v, memory=None):
