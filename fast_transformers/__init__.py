@@ -1,2 +1,2 @@
-from .linear_attention import LinearAttention
-from .multihead_attention import MultiHeadAttention
+from .linear_attention import LinearAttention # noqa
+from .multihead_attention import MultiHeadAttention # noqa
