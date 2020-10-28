@@ -1,16 +1,15 @@
-from pathlib import Path
 from os import mkdir
 from os.path import join, exists
-from tokenizers import ByteLevelBPETokenizer
-from tokenizers.implementations import ByteLevelBPETokenizer
-from tokenizers.processors import BertProcessing
+from pathlib import Path
+
 import torch
-from transformers import RobertaConfig
-from transformers import RobertaTokenizerFast
-from transformers import RobertaForMaskedLM
-from transformers import LineByLineTextDataset
-from transformers import Trainer, TrainingArguments
+from tokenizers.implementations import ByteLevelBPETokenizer
 from transformers import DataCollatorForLanguageModeling
+from transformers import LineByLineTextDataset
+from transformers import RobertaConfig
+from transformers import RobertaForMaskedLM
+from transformers import RobertaTokenizerFast
+from transformers import Trainer, TrainingArguments
 
 data_path = "data"
 models_path = "models"
