@@ -1,15 +1,14 @@
 from os import mkdir
 from os.path import join, exists
-from pathlib import Path
 
 import torch
 from tokenizers.implementations import ByteLevelBPETokenizer
 from transformers import DataCollatorForLanguageModeling
 from transformers import LineByLineTextDataset
-from transformers import RobertaConfig
-from transformers import RobertaForMaskedLM
+from transformers import BertConfig
 from transformers import RobertaTokenizerFast
 from transformers import Trainer, TrainingArguments
+from fast_transformers import LinBertForMaskedLM
 
 data_path = "data"
 models_path = "models"
@@ -20,7 +19,7 @@ def build_tokenizer(paths: list, output_path: str):
     merges_path = join(output_path, "merges.txt")
     if not exists(vocab_path) or not exists(merges_path):
         tokenizer = ByteLevelBPETokenizer()
-        tokenizer.train(files=paths, vocab_size=52_000, min_frequency=2, special_tokens=[
+        tokenizer.train(files=paths, vocab_size=2_000, min_frequency=2, special_tokens=[
             "<s>",
             "<pad>",
             "</s>",
@@ -30,32 +29,33 @@ def build_tokenizer(paths: list, output_path: str):
 
         mkdir(output_path)
         tokenizer.save_model(output_path)
-    return RobertaTokenizerFast.from_pretrained(output_path, max_len=512)
+    return RobertaTokenizerFast.from_pretrained(output_path, max_len=32)
 
 
 def train():
     if not exists(models_path):
         mkdir(models_path)
 
-    paths = [str(x) for x in Path(".").glob(join(data_path, "*.txt"))]
     output_path = join(models_path, "EsperBERTo")
+    file_path = join(data_path, "oscar_small.eo.txt")
+    paths = [file_path]
     tokenizer = build_tokenizer(paths=paths, output_path=output_path)
 
     torch.cuda.is_available()
 
-    config = RobertaConfig(
-        vocab_size=52_000,
-        max_position_embeddings=514,
-        num_attention_heads=12,
-        num_hidden_layers=6,
+    config = BertConfig(
+        vocab_size=2_000,
+        max_position_embeddings=512,
+        num_attention_heads=2,
+        num_hidden_layers=2,
         type_vocab_size=1,
     )
 
-    model = RobertaForMaskedLM(config=config)
+    model = LinBertForMaskedLM(config=config)
 
     dataset = LineByLineTextDataset(
         tokenizer=tokenizer,
-        file_path=join(data_path, "oscar.eo.txt"),
+        file_path=file_path,
         block_size=128,
     )
 
@@ -67,7 +67,7 @@ def train():
         output_dir=output_path,
         overwrite_output_dir=True,
         num_train_epochs=1,
-        per_gpu_train_batch_size=64,
+        per_gpu_train_batch_size=5,
         save_steps=10_000,
         save_total_limit=2,
     )
