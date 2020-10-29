@@ -13,6 +13,8 @@ from fast_transformers import LinBertForMaskedLM
 data_path = "data"
 models_path = "models"
 
+SEED = 9
+
 
 def build_tokenizer(paths: list, output_path: str):
     vocab_path = join(output_path, "vocab.json")
@@ -69,6 +71,7 @@ def train():
         num_train_epochs=1,
         per_gpu_train_batch_size=5,
         save_steps=10_000,
+        seed=SEED,
         save_total_limit=2,
     )
 
