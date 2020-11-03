@@ -10,3 +10,6 @@ wandb/
 build/
 experimentation.py
 *egg-info/
+data/
+models/
+runs/
