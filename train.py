@@ -1,13 +1,13 @@
 from os import mkdir
+from argparse import ArgumentParser
 from os.path import join, exists
+from configs import configure_bert_training
 
-import torch
 from tokenizers.implementations import ByteLevelBPETokenizer
 from transformers import DataCollatorForLanguageModeling
 from transformers import LineByLineTextDataset
-from transformers import BertConfig
 from transformers import RobertaTokenizerFast
-from transformers import Trainer, TrainingArguments
+from transformers import Trainer
 from fast_transformers import LinBertForMaskedLM
 
 data_path = "data"
@@ -21,7 +21,7 @@ def build_tokenizer(paths: list, output_path: str):
     merges_path = join(output_path, "merges.txt")
     if not exists(vocab_path) or not exists(merges_path):
         tokenizer = ByteLevelBPETokenizer()
-        tokenizer.train(files=paths, vocab_size=2_000, min_frequency=2, special_tokens=[
+        tokenizer.train(files=paths, vocab_size=52_000, min_frequency=2, special_tokens=[
             "<s>",
             "<pad>",
             "</s>",
@@ -31,27 +31,19 @@ def build_tokenizer(paths: list, output_path: str):
 
         mkdir(output_path)
         tokenizer.save_model(output_path)
-    return RobertaTokenizerFast.from_pretrained(output_path, max_len=32)
+    return RobertaTokenizerFast.from_pretrained(output_path, max_len=512)
 
 
-def train():
+def train(is_test: bool):
     if not exists(models_path):
         mkdir(models_path)
 
     output_path = join(models_path, "EsperBERTo")
-    file_path = join(data_path, "oscar_small.eo.txt")
+    file_path = join(data_path, "oscar_small.eo.txt" if is_test else "oscar.eo.txt")
     paths = [file_path]
     tokenizer = build_tokenizer(paths=paths, output_path=output_path)
 
-    torch.cuda.is_available()
-
-    config = BertConfig(
-        vocab_size=2_000,
-        max_position_embeddings=512,
-        num_attention_heads=2,
-        num_hidden_layers=2,
-        type_vocab_size=1,
-    )
+    config, training_args = configure_bert_training(output_path, is_test)
 
     model = LinBertForMaskedLM(config=config)
 
@@ -63,16 +55,6 @@ def train():
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15
-    )
-
-    training_args = TrainingArguments(
-        output_dir=output_path,
-        overwrite_output_dir=True,
-        num_train_epochs=1,
-        per_gpu_train_batch_size=5,
-        save_steps=10_000,
-        seed=SEED,
-        save_total_limit=2,
     )
 
     trainer = Trainer(
@@ -88,4 +70,8 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    arg_parser = ArgumentParser()
+    arg_parser.add_argument("--test", action="store_true")
+    arg_parser.add_argument("--resume", type=str, default=None)
+    args = arg_parser.parse_args()
+    train(args.test)
