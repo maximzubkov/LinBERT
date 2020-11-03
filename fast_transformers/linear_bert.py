@@ -1,6 +1,7 @@
 import torch.nn as nn
-from fast_transformers import LinearAttention
 from transformers import BertForMaskedLM
+
+from fast_transformers import LinearAttention
 
 
 class LinBertSelfAttention(nn.Module):
@@ -26,24 +27,23 @@ class LinBertSelfAttention(nn.Module):
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
-        x = x.view(*new_x_shape)
-        return x.permute(0, 2, 1, 3)
+        return x.view(*new_x_shape)
 
     def forward(
             self,
             hidden_states,
-            attention_mask=None, # noqa
+            attention_mask=None,
             head_mask=None,
             encoder_hidden_states=None,
             encoder_attention_mask=None,
             output_attentions=False,
     ):
         mixed_query_layer = self.query(hidden_states)
-        # TODO: return kv @ 1/z from LinearAttention and pass it as attention probs
+
         if encoder_hidden_states is not None:
             mixed_key_layer = self.key(encoder_hidden_states)
             mixed_value_layer = self.value(encoder_hidden_states)
-            attention_mask = encoder_attention_mask # noqa
+            attention_mask = encoder_attention_mask
         else:
             mixed_key_layer = self.key(hidden_states)
             mixed_value_layer = self.value(hidden_states)
@@ -52,11 +52,13 @@ class LinBertSelfAttention(nn.Module):
         key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
 
-        # TODO: apply attention mask to attention probs
-        context_layer = self.attention(query_layer, key_layer, value_layer, head_mask)
+        if attention_mask is not None:
+            attention_mask = attention_mask.permute(0, 3, 1, 2).squeeze()
+
+        context_layer = self.attention(query_layer, key_layer, value_layer, attention_mask, head_mask)
         context_layer = self.dropout(context_layer)
 
-        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
+        context_layer = context_layer.contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
 

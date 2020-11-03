@@ -22,21 +22,25 @@ class LinearAttention(Module):
         self.feature_map = feature_map
         self.eps = eps
 
-    def forward(self, q, k, v, mask: Optional[torch.Tensor] = None):
-
+    def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
+        # [batch_size, q_seq_len, n_heads, p_s]
         q = self.feature_map(q)
+        # [batch_size, k_seq_len, n_heads, p_s]
         k = self.feature_map(k)
 
-        if mask is None:  # causal attention
+        if attention_mask is None:  # causal attention
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
             v = self.causal_linear(q, k, v)
+            if head_mask is not None:
+                v = v * head_mask.view(1, 1, *head_mask.shape, 1)
             return v / z.unsqueeze(-1)
         else:
-            torch.jit._unwrap_optional(mask)
-            k = k * mask.view(mask.size(0), mask.size(1), 1, 1)
-
+            torch.jit._unwrap_optional(attention_mask)
+            k = k * attention_mask.view(*attention_mask.shape, 1, 1)
             # [batch_size, n_heads, p_s, p_s]
             kv = torch.einsum("nshd,nshm->nhmd", k, v)
+            if head_mask is not None:
+                kv = kv * head_mask.view(1, *head_mask.shape, 1, 1)
             # [batch_size, target_seq_len, n_heads]
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
             # [batch_size, target_seq_len, n_heads, p_s]
