@@ -19,8 +19,12 @@ def test_lin_head_mask():
     mask = torch.zeros((num_heads,), dtype=torch.uint8)  # or dtype=torch.ByteTensor
 
     res = attn(q, k, v, head_mask=mask)
-    print(mask)
     assert torch.all(torch.eq(res, torch.zeros_like(v)))
+
+    head_mask = torch.zeros((num_heads,), dtype=torch.uint8)
+    attention_mask = torch.zeros((batch_size, seq_len), dtype=torch.uint8)
+    attn(q, k, v, head_mask=head_mask, attention_mask=attention_mask)
+    assert True
 
 
 @torch.no_grad()
