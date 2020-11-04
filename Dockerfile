@@ -32,6 +32,5 @@ COPY . /LinBERT
 RUN python -m pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-RUN cd LinBERT \
-    && python setup.py build_ext --inplace \
-    && pip install -e . 
+RUN python setup.py build_ext --inplace \
+    && pip install -e .
