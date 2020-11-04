@@ -16,12 +16,12 @@ models_path = "models"
 SEED = 9
 
 
-def build_tokenizer(paths: list, output_path: str):
+def build_tokenizer(paths: list, output_path: str, vocab_size: int):
     vocab_path = join(output_path, "vocab.json")
     merges_path = join(output_path, "merges.txt")
     if not exists(vocab_path) or not exists(merges_path):
         tokenizer = ByteLevelBPETokenizer()
-        tokenizer.train(files=paths, vocab_size=52_000, min_frequency=2, special_tokens=[
+        tokenizer.train(files=paths, vocab_size=vocab_size, min_frequency=2, special_tokens=[
             "<s>",
             "<pad>",
             "</s>",
@@ -39,11 +39,10 @@ def train(is_test: bool):
         mkdir(models_path)
 
     output_path = join(models_path, "EsperBERTo")
+    config, training_args = configure_bert_training(output_path, is_test)
     file_path = join(data_path, "oscar_small.eo.txt" if is_test else "oscar.eo.txt")
     paths = [file_path]
-    tokenizer = build_tokenizer(paths=paths, output_path=output_path)
-
-    config, training_args = configure_bert_training(output_path, is_test)
+    tokenizer = build_tokenizer(paths=paths, output_path=output_path, vocab_size=config.vocab_size)
 
     model = LinBertForMaskedLM(config=config)
 
