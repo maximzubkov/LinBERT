@@ -6,7 +6,7 @@ from configs import configure_bert_training
 from tokenizers.implementations import ByteLevelBPETokenizer
 from transformers import DataCollatorForLanguageModeling
 from transformers import LineByLineTextDataset
-from transformers import RobertaTokenizerFast
+from transformers import RobertaTokenizer
 from transformers import Trainer
 from fast_transformers import LinBertForMaskedLM
 
@@ -31,7 +31,7 @@ def build_tokenizer(paths: list, output_path: str):
 
         mkdir(output_path)
         tokenizer.save_model(output_path)
-    return RobertaTokenizerFast.from_pretrained(output_path, max_len=512)
+    return RobertaTokenizer.from_pretrained(output_path, max_len=512)
 
 
 def train(is_test: bool):
@@ -62,7 +62,6 @@ def train(is_test: bool):
         args=training_args,
         data_collator=data_collator,
         train_dataset=dataset,
-        prediction_loss_only=True,
     )
 
     trainer.train()
