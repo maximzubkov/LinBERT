@@ -27,7 +27,7 @@ ENV TORCH_NVCC_FLAGS "-Xfatbin -compress-all"
 ENV DESIRED_CUDA 102
 
 WORKDIR /LinBERT
-COPY . /LinBERT
+COPY docker /LinBERT
 
 RUN python -m pip install --upgrade pip
 RUN pip install -r requirements.txt
