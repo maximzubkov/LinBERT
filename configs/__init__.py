@@ -39,7 +39,7 @@ def configure_bert_training(output_path: str, is_test: bool) -> Tuple[BertConfig
 
         config = BertConfig(
             vocab_size=52_000,
-            max_position_embeddings=514,
+            max_position_embeddings=512,
             num_attention_heads=12,
             num_hidden_layers=6,
             type_vocab_size=1,
