@@ -1,6 +1,6 @@
 import torch
 
-from fast_transformers import LinearAttention
+from models.modules.fast_transformers import LinearAttention
 
 
 @torch.no_grad()

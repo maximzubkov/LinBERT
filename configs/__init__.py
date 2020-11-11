@@ -1,4 +1,5 @@
 from typing import Tuple
+
 from transformers import BertConfig, TrainingArguments
 
 data_path = "data"
@@ -21,10 +22,12 @@ def configure_bert_training(output_path: str, is_test: bool) -> Tuple[BertConfig
 
         config = BertConfig(
             vocab_size=2_000,
-            max_position_embeddings=512,
+            max_position_embeddings=128,
             num_attention_heads=2,
             num_hidden_layers=2,
             type_vocab_size=1,
+            has_pos_attention=True,
+            is_linear=True
         )
     else:
         training_args = TrainingArguments(
@@ -39,10 +42,12 @@ def configure_bert_training(output_path: str, is_test: bool) -> Tuple[BertConfig
 
         config = BertConfig(
             vocab_size=52_000,
-            max_position_embeddings=512,
+            max_position_embeddings=128,
             num_attention_heads=12,
             num_hidden_layers=6,
             type_vocab_size=1,
+            has_pos_attention=True,
+            is_linear=True
         )
 
     return config, training_args

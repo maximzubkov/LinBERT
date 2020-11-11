@@ -1,17 +1,18 @@
-from os import mkdir
 from argparse import ArgumentParser
+from os import mkdir
 from os.path import join, exists
-from configs import configure_bert_training
 
 from tokenizers.implementations import ByteLevelBPETokenizer
 from transformers import DataCollatorForLanguageModeling
 from transformers import LineByLineTextDataset
 from transformers import RobertaTokenizer
 from transformers import Trainer
-from fast_transformers import LinBertForMaskedLM
+
+from configs import configure_bert_training
+from models import LinBertForMaskedLM
 
 data_path = "data"
-models_path = "models"
+save_path = "data"
 
 SEED = 9
 
@@ -31,14 +32,14 @@ def build_tokenizer(paths: list, output_path: str, vocab_size: int):
 
         mkdir(output_path)
         tokenizer.save_model(output_path)
-    return RobertaTokenizer.from_pretrained(output_path, max_len=512)
+    return RobertaTokenizer.from_pretrained(output_path, max_len=128)
 
 
 def train(is_test: bool):
-    if not exists(models_path):
-        mkdir(models_path)
+    if not exists(save_path):
+        mkdir(save_path)
 
-    output_path = join(models_path, "EsperBERTo")
+    output_path = join(save_path, "EsperBERTo")
     config, training_args = configure_bert_training(output_path, is_test)
     file_path = join(data_path, "oscar_small.eo.txt" if is_test else "oscar.eo.txt")
     paths = [file_path]

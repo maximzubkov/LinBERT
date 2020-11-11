@@ -9,16 +9,15 @@ from typing import Optional
 import torch
 from torch.nn import Module
 
-from fast_transformers.causal_product import causal_dot_product
-
-
-def elu_feature_map(x):
-    return torch.nn.functional.elu(x) + 1
+from models.modules.common import elu_feature_map
+from models.modules.fast_transformers.causal_product import causal_dot_product
+from models.modules.positional_attention import PositionalAttention
 
 
 class LinearAttention(Module):
-    def __init__(self, feature_map=elu_feature_map, eps=1e-6):
+    def __init__(self, pos_attention: PositionalAttention = None, feature_map=elu_feature_map, eps=1e-6):
         super(LinearAttention, self).__init__()
+        self.pos_attention = pos_attention
         self.feature_map = feature_map
         self.eps = eps
 
@@ -42,9 +41,13 @@ class LinearAttention(Module):
             if head_mask is not None:
                 kv = kv * head_mask.view(1, *head_mask.shape, 1, 1)
             # [batch_size, target_seq_len, n_heads]
-            z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
+            z_qk = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
             # [batch_size, target_seq_len, n_heads, p_s]
-            return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z)
+            if self.pos_attention is not None:
+                pv, z_pv = self.pos_attention(q, v, attention_mask, head_mask)
+                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv + pv, 1 / (z_qk + z_pv))
+            else:
+                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z_qk)
 
     def recurrent(self, q, k, v, memory=None):
         q = self.feature_map(q)

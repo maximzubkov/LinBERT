@@ -39,7 +39,7 @@ def collect_docstring(lines):
 
 def collect_metadata():
     meta = {}
-    with open(path.join("fast_transformers", "__init__.py")) as f:
+    with open(path.join("models", "modules", "fast_transformers", "__init__.py")) as f:
         lines = iter(f)
         meta["description"] = collect_docstring(lines)
         for line in lines:
@@ -53,9 +53,9 @@ def collect_metadata():
 def get_extensions():
     extensions = [
         CppExtension(
-            "fast_transformers.causal_product.causal_product_cpu",
+            "models.modules.fast_transformers.causal_product.causal_product_cpu",
             sources=[
-                "fast_transformers/causal_product/causal_product_cpu.cpp"
+                "models/modules/fast_transformers/causal_product/causal_product_cpu.cpp"
             ],
             extra_compile_args=["-Xpreprocessor", "-fopenmp", "-ffast-math"],
         )
@@ -65,9 +65,9 @@ def get_extensions():
 
         extensions += [
             CUDAExtension(
-                "fast_transformers.causal_product.causal_product_cuda",
+                "models.modules.fast_transformers.causal_product.causal_product_cuda",
                 sources=[
-                    "fast_transformers/causal_product/causal_product_cuda.cu"
+                    "models/modules/fast_transformers/causal_product/causal_product_cuda.cu"
                 ],
                 extra_compile_args=["-arch=compute_50"],
             )

@@ -1,11 +1,13 @@
 import torch.nn as nn
-from transformers import BertForMaskedLM
+from transformers import BertModel, BertForMaskedLM
 
-from fast_transformers import LinearAttention
+from models.modules import LinPositionalAttention
+from models.modules.common import transpose_for_scores
+from models.modules.fast_transformers import LinearAttention
 
 
 class LinBertSelfAttention(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, pos_attention: nn.Module = None):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
             raise ValueError(
@@ -16,18 +18,15 @@ class LinBertSelfAttention(nn.Module):
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
+        self.max_position_embeddings = config.max_position_embeddings
 
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
 
-        self.attention = LinearAttention()
+        self.attention = LinearAttention(pos_attention)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-
-    def transpose_for_scores(self, x):
-        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
-        return x.view(*new_x_shape)
 
     def forward(
             self,
@@ -48,14 +47,32 @@ class LinBertSelfAttention(nn.Module):
             mixed_key_layer = self.key(hidden_states)
             mixed_value_layer = self.value(hidden_states)
 
-        query_layer = self.transpose_for_scores(mixed_query_layer)
-        key_layer = self.transpose_for_scores(mixed_key_layer)
-        value_layer = self.transpose_for_scores(mixed_value_layer)
+        query_layer = transpose_for_scores(
+            mixed_query_layer,
+            self.num_attention_heads,
+            self.attention_head_size
+        )
+        key_layer = transpose_for_scores(
+            mixed_key_layer,
+            self.num_attention_heads,
+            self.attention_head_size
+        )
+        value_layer = transpose_for_scores(
+            mixed_value_layer,
+            self.num_attention_heads,
+            self.attention_head_size
+        )
 
         if attention_mask is not None:
             attention_mask = attention_mask.permute(0, 3, 1, 2).squeeze()
 
-        context_layer = self.attention(query_layer, key_layer, value_layer, attention_mask, head_mask)
+        context_layer = self.attention(
+            query_layer,
+            key_layer,
+            value_layer,
+            attention_mask,
+            head_mask
+        )
         context_layer = self.dropout(context_layer)
 
         context_layer = context_layer.contiguous()
@@ -66,8 +83,17 @@ class LinBertSelfAttention(nn.Module):
         return outputs
 
 
+class LinBertModel(BertModel):
+    def __init__(self, config):
+        super().__init__(config)
+        self.pos_attention = \
+            LinPositionalAttention(config, self.embeddings.position_embeddings) if config.has_pos_attention else None
+
+        for i, _ in enumerate(self.encoder.layer):
+            self.encoder.layer[i].attention.self = LinBertSelfAttention(config, self.pos_attention)
+
+
 class LinBertForMaskedLM(BertForMaskedLM):
     def __init__(self, config):
         super().__init__(config)
-        for i, _ in enumerate(self.bert.encoder.layer):
-            self.bert.encoder.layer[i].attention.self = LinBertSelfAttention(config)
+        self.bert = LinBertModel(config)
