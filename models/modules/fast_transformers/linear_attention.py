@@ -56,8 +56,7 @@ class LinearAttention(Module):
             if self.pos_attention is not None:
                 ppv, z_pp = self.pos_attention(q, v, attention_mask, head_mask)
                 z = z_qk + z_pp
-                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
-                       torch.einsum("nlhmd,nlh->nlhm", ppv, 1 / z)
+                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + torch.einsum("nlhmd,nlh->nlhm", ppv, 1 / z)
             else:
                 return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z_qk)
 

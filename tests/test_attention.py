@@ -1,5 +1,5 @@
 import torch
-from transformers import  BertConfig
+from transformers import BertConfig
 
 from models.modules.fast_transformers import LinearAttention
 
@@ -7,6 +7,7 @@ config = BertConfig(
     has_pos_attention=False,
     has_batch_norm=False
 )
+
 
 @torch.no_grad()
 def test_lin_head_mask():

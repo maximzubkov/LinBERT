@@ -49,4 +49,3 @@ def test_lin_pos_attn():
     attention_mask = torch.zeros((batch_size, seq_len), dtype=torch.uint8)
     ppv, z_pp = lin_pos_attn(q, v, head_mask=head_mask, attention_mask=attention_mask)
     assert torch.equal(ppv, torch.zeros_like(ppv))
-
