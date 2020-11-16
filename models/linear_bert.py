@@ -1,5 +1,5 @@
 import torch.nn as nn
-from transformers import BertModel, BertForMaskedLM
+from transformers import BertModel, BertForSequenceClassification
 
 from models.modules import LinPositionalAttention
 from models.modules.common import transpose_for_scores
@@ -93,7 +93,7 @@ class LinBertModel(BertModel):
             self.encoder.layer[i].attention.self = LinBertSelfAttention(config, self.pos_attention)
 
 
-class LinBertForMaskedLM(BertForMaskedLM):
+class LinBertForSequenceClassification(BertForSequenceClassification):
     def __init__(self, config):
         super().__init__(config)
         self.bert = LinBertModel(config)
