@@ -3,34 +3,15 @@ import math
 import torch
 import torch.nn as nn
 from transformers import BertForMaskedLM, BertModel
+from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import PositionalAttention
 
 
-class PosAttnBertSelfAttention(nn.Module):
+class PosAttnBertSelfAttention(BertSelfAttention):
     def __init__(self, config, pos_attention: nn.Module = None):
-        super().__init__()
-        if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
-            raise ValueError(
-                "The hidden size (%d) is not a multiple of the number of attention "
-                "heads (%d)" % (config.hidden_size, config.num_attention_heads)
-            )
-
-        self.num_attention_heads = config.num_attention_heads
-        self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
-        self.all_head_size = self.num_attention_heads * self.attention_head_size
-
-        self.query = nn.Linear(config.hidden_size, self.all_head_size)
-        self.key = nn.Linear(config.hidden_size, self.all_head_size)
-        self.value = nn.Linear(config.hidden_size, self.all_head_size)
-
+        super().__init__(config)
         self.pos_attention = pos_attention
-
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-
-    def transpose_for_scores(self, x):
-        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
-        return x.view(*new_x_shape)
 
     def forward(
         self,
@@ -61,7 +42,8 @@ class PosAttnBertSelfAttention(nn.Module):
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
         if self.pos_attention is not None:
-            attention_scores += self.pos_attention()
+            _, _, seq_len, _ = attention_scores.shape
+            attention_scores += self.pos_attention(seq_len)
             scaling_factor = math.sqrt(2 * self.attention_head_size)
         else:
             scaling_factor = math.sqrt(self.attention_head_size)

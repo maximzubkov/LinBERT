@@ -7,6 +7,7 @@
 from typing import Optional
 
 import torch
+import torch.nn as nn
 from torch.nn import Module
 
 from models.modules.common import elu_feature_map
@@ -15,15 +16,24 @@ from models.modules.positional_attention import PositionalAttention
 
 
 class LinearAttention(Module):
-    def __init__(self, pos_attention: PositionalAttention = None, feature_map=elu_feature_map, eps=1e-6):
+    def __init__(self, config, pos_attention: PositionalAttention = None,
+                 feature_map=elu_feature_map,
+                 eps=1e-6):
         super(LinearAttention, self).__init__()
         self.pos_attention = pos_attention
         self.feature_map = feature_map
         self.eps = eps
+        self.bn_k = nn.BatchNorm2d(config.num_attention_heads) if config.has_batch_norm else None
+        self.bn_q = nn.BatchNorm2d(config.num_attention_heads) if config.has_batch_norm else None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
+        if self.bn_q is not None:
+            q = self.bn_q(q.transpose(2, 1)).transpose(2, 1)
         # [batch_size, q_seq_len, n_heads, p_s]
         q = self.feature_map(q)
+
+        if self.bn_k is not None:
+            k = self.bn_k(k.transpose(2, 1)).transpose(2, 1)
         # [batch_size, k_seq_len, n_heads, p_s]
         k = self.feature_map(k)
 
@@ -44,8 +54,10 @@ class LinearAttention(Module):
             z_qk = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
             # [batch_size, target_seq_len, n_heads, p_s]
             if self.pos_attention is not None:
-                pv, z_pv = self.pos_attention(q, v, attention_mask, head_mask)
-                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv + pv, 1 / (z_qk + z_pv))
+                ppv, z_pp = self.pos_attention(q, v, attention_mask, head_mask)
+                z = z_qk + z_pp
+                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
+                       torch.einsum("nlhmd,nlh->nlhm", ppv, 1 / z)
             else:
                 return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z_qk)
 

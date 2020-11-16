@@ -24,7 +24,7 @@ class LinBertSelfAttention(nn.Module):
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
 
-        self.attention = LinearAttention(pos_attention)
+        self.attention = LinearAttention(config, pos_attention)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 

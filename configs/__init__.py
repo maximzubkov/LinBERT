@@ -8,7 +8,9 @@ models_path = "models"
 SEED = 9
 
 
-def configure_bert_training(output_path: str, is_test: bool) -> Tuple[BertConfig, TrainingArguments]:
+def configure_bert_training(output_path: str, is_test: bool,
+                            has_pos_attention: bool,
+                            has_batch_norm: bool) -> Tuple[BertConfig, TrainingArguments]:
     if is_test:
         training_args = TrainingArguments(
             output_dir=output_path,
@@ -26,8 +28,8 @@ def configure_bert_training(output_path: str, is_test: bool) -> Tuple[BertConfig
             num_attention_heads=2,
             num_hidden_layers=2,
             type_vocab_size=1,
-            has_pos_attention=True,
-            is_linear=True
+            has_pos_attention=has_pos_attention,
+            has_batch_norm=has_batch_norm
         )
     else:
         training_args = TrainingArguments(
@@ -46,8 +48,8 @@ def configure_bert_training(output_path: str, is_test: bool) -> Tuple[BertConfig
             num_attention_heads=12,
             num_hidden_layers=6,
             type_vocab_size=1,
-            has_pos_attention=True,
-            is_linear=True
+            has_pos_attention=has_pos_attention,
+            has_batch_norm=has_batch_norm
         )
 
     return config, training_args
