@@ -2,7 +2,7 @@ import math
 
 import torch
 import torch.nn as nn
-from transformers import BertForMaskedLM, BertModel
+from transformers import BertForSequenceClassification, BertModel
 from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import PositionalAttention
@@ -83,7 +83,7 @@ class PosAttnBertModel(BertModel):
             self.encoder.layer[i].attention.self = PosAttnBertSelfAttention(config, self.pos_attention)
 
 
-class PosAttnBertForMaskedLM(BertForMaskedLM):
+class PosAttnBertForSequenceClassification(BertForSequenceClassification):
     def __init__(self, config):
         super().__init__(config)
         self.bert = PosAttnBertModel(config)

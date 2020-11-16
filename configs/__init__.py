@@ -23,7 +23,7 @@ def configure_bert_training(output_path: str, is_test: bool,
         )
 
         config = BertConfig(
-            vocab_size=2_000,
+            vocab_size=52_000,
             max_position_embeddings=128,
             num_attention_heads=2,
             num_hidden_layers=2,

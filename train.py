@@ -1,15 +1,16 @@
+import random
 from argparse import ArgumentParser
 from os import mkdir
 from os.path import join, exists
 
-from tokenizers.implementations import ByteLevelBPETokenizer
-from transformers import DataCollatorForLanguageModeling
-from transformers import LineByLineTextDataset
-from transformers import RobertaTokenizer
+import numpy as np
+from transformers import BertTokenizerFast
 from transformers import Trainer
+from transformers.trainer_utils import set_seed
 
 from configs import configure_bert_training
-from models import LinBertForMaskedLM, PosAttnBertForMaskedLM
+from datasets import load_dataset, datasets
+from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
 
 data_path = "data"
 save_path = "data"
@@ -17,29 +18,27 @@ save_path = "data"
 SEED = 9
 
 
-def build_tokenizer(paths: list, output_path: str, vocab_size: int):
-    vocab_path = join(output_path, "vocab.json")
-    merges_path = join(output_path, "merges.txt")
-    if not exists(vocab_path) or not exists(merges_path):
-        tokenizer = ByteLevelBPETokenizer()
-        tokenizer.train(files=paths, vocab_size=vocab_size, min_frequency=2, special_tokens=[
-            "<s>",
-            "<pad>",
-            "</s>",
-            "<unk>",
-            "<mask>",
-        ])
-
-        mkdir(output_path)
-        tokenizer.save_model(output_path)
-    return RobertaTokenizer.from_pretrained(output_path, max_len=128)
+def get_dataset(dataset_name: str, experiment_name: str, type: str, tokenizer: BertTokenizerFast):
+    return load_dataset(
+        experiment_name=experiment_name,
+        dataset_config=datasets[dataset_name],
+        dataset_path=join(data_path, dataset_name, type + ".csv"),
+        tokenizer=tokenizer,
+    )
 
 
-def train(is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attention: bool):
+def set_seed_():
+    random.seed(SEED)
+    np.random.seed(SEED)
+    set_seed(SEED)
+
+
+def train(dataset_name: str, is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attention: bool):
+    set_seed_()
     if not exists(save_path):
         mkdir(save_path)
 
-    output_path = join(save_path, "EsperBERTo")
+    output_path = join(save_path, dataset_name)
     config, training_args = configure_bert_training(
         output_path,
         is_test=is_test,
@@ -47,30 +46,35 @@ def train(is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attentio
         has_pos_attention=has_pos_attention
     )
 
-    file_path = join(data_path, "oscar_small.eo.txt" if is_test else "oscar.eo.txt")
-    paths = [file_path]
-    tokenizer = build_tokenizer(paths=paths, output_path=output_path, vocab_size=config.vocab_size)
+    tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
 
     if is_linear:
-        model = LinBertForMaskedLM(config=config)
+        model = LinBertForSequenceClassification(config=config)
     else:
-        model = PosAttnBertForMaskedLM(config=config)
+        model = PosAttnBertForSequenceClassification(config=config)
 
-    dataset = LineByLineTextDataset(
-        tokenizer=tokenizer,
-        file_path=file_path,
-        block_size=128,
+    experiment_name = dataset_name + "_" + \
+        ("lin_" if is_linear else "") + \
+        ("pos_" if has_pos_attention else "") + \
+        ("bn_" if has_batch_norm else "")
+    train_dataset = get_dataset(
+        experiment_name=experiment_name,
+        dataset_name=dataset_name,
+        type="train_small" if is_test else "train",
+        tokenizer=tokenizer
     )
-
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer, mlm=True, mlm_probability=0.15
+    eval_dataset = get_dataset(
+        experiment_name=experiment_name,
+        dataset_name=dataset_name,
+        type="test_small" if is_test else "test",
+        tokenizer=tokenizer
     )
 
     trainer = Trainer(
         model=model,
         args=training_args,
-        data_collator=data_collator,
-        train_dataset=dataset,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset
     )
 
     trainer.train()
@@ -79,10 +83,11 @@ def train(is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attentio
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
+    arg_parser.add_argument("--dataset", choices=["yelp_polarity", "yelp_full"])
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--resume", type=str, default=None)
     arg_parser.add_argument("--is_linear", action='store_true')
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     args = arg_parser.parse_args()
-    train(args.test, args.is_linear, args.has_batch_norm, args.has_pos_attention)
+    train(args.dataset, args.test, args.is_linear, args.has_batch_norm, args.has_pos_attention)
