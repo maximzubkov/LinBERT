@@ -1,11 +1,17 @@
 import torch
+from transformers import BertConfig
 
-from fast_transformers import LinearAttention
+from models.modules.fast_transformers import LinearAttention
+
+config = BertConfig(
+    has_pos_attention=False,
+    has_batch_norm=False
+)
 
 
 @torch.no_grad()
 def test_lin_head_mask():
-    attn = LinearAttention()
+    attn = LinearAttention(config)
     attn.eval()
 
     seq_len = 3
@@ -29,7 +35,7 @@ def test_lin_head_mask():
 
 @torch.no_grad()
 def test_lin_attention_mask():
-    attn = LinearAttention()
+    attn = LinearAttention(config)
     attn.eval()
 
     seq_len = 3
