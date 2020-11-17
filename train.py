@@ -1,44 +1,22 @@
-import random
 from argparse import ArgumentParser
-from os import mkdir
-from os.path import join, exists
+from os.path import join
 
-import numpy as np
 from transformers import BertTokenizerFast
 from transformers import Trainer
-from transformers.trainer_utils import set_seed
 
 from configs import configure_bert_training
-from datasets import load_dataset, datasets
+from utils import get_dataset, set_seed_, compute_metrics
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
 
 data_path = "data"
-save_path = "data"
 
 SEED = 9
 
 
-def get_dataset(dataset_name: str, experiment_name: str, type: str, tokenizer: BertTokenizerFast):
-    return load_dataset(
-        experiment_name=experiment_name,
-        dataset_config=datasets[dataset_name],
-        dataset_path=join(data_path, dataset_name, type + ".csv"),
-        tokenizer=tokenizer,
-    )
-
-
-def set_seed_():
-    random.seed(SEED)
-    np.random.seed(SEED)
-    set_seed(SEED)
-
-
 def train(dataset_name: str, is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attention: bool):
-    set_seed_()
-    if not exists(save_path):
-        mkdir(save_path)
+    set_seed_(SEED)
 
-    output_path = join(save_path, dataset_name)
+    output_path = join(data_path, dataset_name)
     config, training_args = configure_bert_training(
         output_path,
         is_test=is_test,
@@ -57,24 +35,27 @@ def train(dataset_name: str, is_test: bool, is_linear: bool, has_batch_norm: boo
         ("lin_" if is_linear else "") + \
         ("pos_" if has_pos_attention else "") + \
         ("bn_" if has_batch_norm else "")
+
     train_dataset = get_dataset(
         experiment_name=experiment_name,
         dataset_name=dataset_name,
         type="train_small" if is_test else "train",
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
     )
+
     eval_dataset = get_dataset(
         experiment_name=experiment_name,
         dataset_name=dataset_name,
         type="test_small" if is_test else "test",
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
     )
 
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset
+        eval_dataset=eval_dataset,
+        compute_metrics=compute_metrics,
     )
 
     trainer.train()

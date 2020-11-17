@@ -15,12 +15,12 @@ datasets = {
         "columns": {"type": "yelp_full", "feature": "text", "target": "class"},
         "names": ["class", "text"],
         "num_labels": 5,
-        "max_length": 128,
+        "max_length": 1024,
     },
     "yelp_polarity": {
         "columns": {"type": "yelp_full", "feature": "text", "target": "class"},
         "names": ["class", "text"],
         "num_labels": 2,
-        "max_length": 128,
+        "max_length": 1024,
     },
 }
