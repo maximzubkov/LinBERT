@@ -1,0 +1,15 @@
+.idea
+.vscode
+.DS_Store
+files/
+*.ipynb
+__pycache__/
+tbs/
+checkpoint/
+wandb/
+*.so
+build/
+experimentation.py
+*egg-info/
+runs/
+.pytest*
