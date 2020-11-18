@@ -1,32 +1,18 @@
+import torch
 import torch.nn as nn
 from transformers import BertModel, BertForSequenceClassification
+from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import LinPositionalAttention
 from models.modules.common import transpose_for_scores
 from models.modules.fast_transformers import LinearAttention
 
 
-class LinBertSelfAttention(nn.Module):
+class LinBertSelfAttention(BertSelfAttention):
     def __init__(self, config, pos_attention: nn.Module = None):
-        super().__init__()
-        if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
-            raise ValueError(
-                "The hidden size (%d) is not a multiple of the number of attention "
-                "heads (%d)" % (config.hidden_size, config.num_attention_heads)
-            )
-
-        self.num_attention_heads = config.num_attention_heads
-        self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
-        self.all_head_size = self.num_attention_heads * self.attention_head_size
-        self.max_position_embeddings = config.max_position_embeddings
-
-        self.query = nn.Linear(config.hidden_size, self.all_head_size)
-        self.key = nn.Linear(config.hidden_size, self.all_head_size)
-        self.value = nn.Linear(config.hidden_size, self.all_head_size)
+        super().__init__(config)
 
         self.attention = LinearAttention(config, pos_attention)
-
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
     def forward(
             self,
@@ -64,7 +50,11 @@ class LinBertSelfAttention(nn.Module):
         )
 
         if attention_mask is not None:
-            attention_mask = attention_mask.permute(0, 3, 1, 2).squeeze()
+            attention_mask = attention_mask.squeeze()
+            attention_mask = torch.where(attention_mask == 0,
+                                         torch.ones_like(attention_mask),
+                                         torch.zeros_like(attention_mask)
+                                         )
 
         context_layer = self.attention(
             query_layer,
@@ -73,7 +63,6 @@ class LinBertSelfAttention(nn.Module):
             attention_mask,
             head_mask
         )
-        context_layer = self.dropout(context_layer)
 
         context_layer = context_layer.contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
