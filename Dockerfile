@@ -15,6 +15,9 @@ RUN apt-get update \
 RUN ln -sf $(which python3) /usr/bin/python \
     && ln -sf $(which pip3) /usr/bin/pip
 
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
 WORKDIR /LinBERT
 COPY . /LinBERT
 
