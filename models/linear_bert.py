@@ -26,8 +26,6 @@ class LinBertSelfAttention(nn.Module):
 
         self.attention = LinearAttention(config, pos_attention)
 
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-
     def forward(
             self,
             hidden_states,
@@ -73,7 +71,6 @@ class LinBertSelfAttention(nn.Module):
             attention_mask,
             head_mask
         )
-        context_layer = self.dropout(context_layer)
 
         context_layer = context_layer.contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
