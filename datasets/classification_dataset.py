@@ -54,7 +54,7 @@ class ClassificationDataset(Dataset):
                     texts[idx: min(idx + buffer_size, len(texts))],
                     max_length=self.length,
                     truncation=True,
-                    padding=True,
+                    padding="max_length",
                 )
                 torch.save(buffer, save_path + f"buffer_{buffer_idx}.ds")
                 self.buffers.append(buffer)

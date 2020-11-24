@@ -10,7 +10,7 @@ from utils import set_seed_
 data_path = "data"
 
 
-def train(run_name: str, dataset_name: str, seed: int, is_test: bool):
+def create_dataset(dataset_name: str, seed: int, is_test: bool):
     set_seed_(seed)
 
     output_path = join(data_path, dataset_name)
@@ -18,7 +18,6 @@ def train(run_name: str, dataset_name: str, seed: int, is_test: bool):
         output_path,
         seed=seed,
         is_test=is_test,
-        run_name=run_name,
         has_batch_norm=False,
         has_pos_attention=False
     )
@@ -49,8 +48,7 @@ def train(run_name: str, dataset_name: str, seed: int, is_test: bool):
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("--dataset", choices=["yelp_polarity", "yelp_full"])
-    arg_parser.add_argument("--run_name", type=str)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
     args = arg_parser.parse_args()
-    train(args.run_name, args.dataset, args.seed, args.test)
+    create_dataset(args.dataset, args.seed, args.test)

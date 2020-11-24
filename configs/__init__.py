@@ -8,11 +8,11 @@ models_path = "models"
 
 def configure_bert_training(
         output_path: str,
-        run_name: str,
         seed: int,
         is_test: bool,
         has_pos_attention: bool,
         has_batch_norm: bool,
+        run_name: str = "default_yelp",
 ) -> Tuple[BertConfig, TrainingArguments]:
     if is_test:
         training_args = TrainingArguments(
