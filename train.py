@@ -1,19 +1,29 @@
 from argparse import ArgumentParser
 from os.path import join
 
+import wandb
 from transformers import BertTokenizerFast
 from transformers import Trainer
 
 from configs import configure_bert_training
-from utils import get_dataset, set_seed_, compute_metrics
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
+from utils import get_dataset, set_seed_, compute_metrics
 
 data_path = "data"
 
 
-def train(dataset_name: str, seed: int, is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attention: bool):
+def train(
+        project_name: str,
+        dataset_name: str,
+        seed: int,
+        is_test: bool,
+        is_linear: bool,
+        has_batch_norm: bool,
+        has_pos_attention: bool
+):
     set_seed_(seed)
 
+    wandb.init(project=project_name)
     output_path = join(data_path, dataset_name)
     config, training_args = configure_bert_training(
         output_path,
@@ -66,6 +76,7 @@ def train(dataset_name: str, seed: int, is_test: bool, is_linear: bool, has_batc
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("--dataset", choices=["yelp_polarity", "yelp_full"])
+    arg_parser.add_argument("--project_name", type=str)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
     arg_parser.add_argument("--resume", type=str, default=None)
@@ -73,4 +84,12 @@ if __name__ == "__main__":
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     args = arg_parser.parse_args()
-    train(args.dataset, args.seed, args.test, args.is_linear, args.has_batch_norm, args.has_pos_attention)
+    train(
+        args.project_name,
+        args.dataset,
+        args.seed,
+        args.test,
+        args.is_linear,
+        args.has_batch_norm,
+        args.has_pos_attention
+    )
