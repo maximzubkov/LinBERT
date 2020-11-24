@@ -15,9 +15,9 @@ class ClassificationDataset(Dataset):
         columns: dict,
         tokenizer: BertTokenizer,
         seed: int,
-        names=None,
-        max_length=128,
-        buffer_size=16384,
+        names: list = None,
+        max_length: int = 128,
+        buffer_size: int = 16384,
     ):
         full_path = path.rsplit(".")[0]
         save_path = f"{full_path}_{type(tokenizer).__name__}_{max_length}_"
