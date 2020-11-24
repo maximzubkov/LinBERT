@@ -1,19 +1,19 @@
 from argparse import ArgumentParser
 from os.path import join
 
-import wandb
+from datasets import datasets, ClassificationDataset
 from transformers import BertTokenizerFast
 from transformers import Trainer
 
 from configs import configure_bert_training
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
-from utils import get_dataset, set_seed_, compute_metrics
+from utils import set_seed_, compute_metrics
 
 data_path = "data"
 
 
 def train(
-        project_name: str,
+        run_name: str,
         dataset_name: str,
         seed: int,
         is_test: bool,
@@ -23,12 +23,12 @@ def train(
 ):
     set_seed_(seed)
 
-    wandb.init(project=project_name)
     output_path = join(data_path, dataset_name)
     config, training_args = configure_bert_training(
         output_path,
         seed=seed,
         is_test=is_test,
+        run_name=run_name,
         has_batch_norm=has_batch_norm,
         has_pos_attention=has_pos_attention
     )
@@ -40,25 +40,24 @@ def train(
     else:
         model = PosAttnBertForSequenceClassification(config=config)
 
-    experiment_name = dataset_name + "_" + \
-        ("lin_" if is_linear else "") + \
-        ("pos_" if has_pos_attention else "") + \
-        ("bn_" if has_batch_norm else "")
+    dataset_config = datasets[dataset_name]
 
-    train_dataset = get_dataset(
-        experiment_name=experiment_name,
-        dataset_name=dataset_name,
-        type="train_small" if is_test else "train",
+    train_dataset = ClassificationDataset(
+        join(data_path, dataset_name, "train_small.csv" if is_test else "train.csv"),
+        dataset_config["columns"],
         tokenizer=tokenizer,
-        seed=seed
+        seed=seed,
+        names=dataset_config["names"],
+        max_length=dataset_config["max_length"],
     )
 
-    eval_dataset = get_dataset(
-        experiment_name=experiment_name,
-        dataset_name=dataset_name,
-        type="test_small" if is_test else "test",
+    eval_dataset = ClassificationDataset(
+        join(data_path, dataset_name, "test_small.csv" if is_test else "test.csv"),
+        dataset_config["columns"],
         tokenizer=tokenizer,
-        seed=seed
+        seed=seed,
+        names=dataset_config["names"],
+        max_length=dataset_config["max_length"],
     )
 
     trainer = Trainer(
@@ -76,7 +75,7 @@ def train(
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("--dataset", choices=["yelp_polarity", "yelp_full"])
-    arg_parser.add_argument("--project_name", type=str)
+    arg_parser.add_argument("--run_name", type=str)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
     arg_parser.add_argument("--resume", type=str, default=None)
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     args = arg_parser.parse_args()
     train(
-        args.project_name,
+        args.run_name,
         args.dataset,
         args.seed,
         args.test,

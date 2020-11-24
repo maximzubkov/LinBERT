@@ -1,31 +1,11 @@
 import random
-from os.path import join
 
 import numpy as np
-from transformers import BertTokenizerFast
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from transformers import EvalPrediction
 from transformers.trainer_utils import set_seed
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-
-from datasets import load_dataset, datasets
 
 data_path = "data"
-
-
-def get_dataset(
-        dataset_name: str,
-        experiment_name: str,
-        type: str,
-        tokenizer: BertTokenizerFast,
-        seed: int
-):
-    return load_dataset(
-        experiment_name=experiment_name,
-        dataset_config=datasets[dataset_name],
-        dataset_path=join(data_path, dataset_name, type + ".csv"),
-        tokenizer=tokenizer,
-        seed=seed
-    )
 
 
 def set_seed_(seed: int):
