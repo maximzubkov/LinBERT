@@ -19,7 +19,8 @@ class ClassificationDataset(Dataset):
         max_length=128,
         buffer_size=16384,
     ):
-        save_path = f"""{path.rsplit(".")[0]}_{type(tokenizer).__name__}_{max_length}_"""
+        full_path = path.rsplit(".")[0]
+        save_path = f"{full_path}_{type(tokenizer).__name__}_{max_length}_"
         labels_path = save_path + "labels.ds"
 
         self.data = pd.read_csv(path, names=names)
