@@ -12,12 +12,19 @@ from datasets import load_dataset, datasets
 data_path = "data"
 
 
-def get_dataset(dataset_name: str, experiment_name: str, type: str, tokenizer: BertTokenizerFast):
+def get_dataset(
+        dataset_name: str,
+        experiment_name: str,
+        type: str,
+        tokenizer: BertTokenizerFast,
+        seed: int
+):
     return load_dataset(
         experiment_name=experiment_name,
         dataset_config=datasets[dataset_name],
         dataset_path=join(data_path, dataset_name, type + ".csv"),
         tokenizer=tokenizer,
+        seed=seed
     )
 
 

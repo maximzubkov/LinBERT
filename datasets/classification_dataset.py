@@ -12,12 +12,14 @@ class ClassificationDataset(Dataset):
         path: str,
         columns: dict,
         tokenizer: BertTokenizer,
+        seed: int,
         names=None,
         max_length=128,
     ):
         self.data = pd.read_csv(path, names=names)
         self.length = max_length
 
+        random.seed(seed)
         indices = list(range(len(self.data[columns["feature"]])))
         random.shuffle(indices)
 

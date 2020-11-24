@@ -14,6 +14,7 @@ def load_dataset(
     dataset_config: config_type,
     dataset_path: str,
     tokenizer: BertTokenizer,
+    seed: int,
 ):
     dataset = None
     dataset_file_path = (
@@ -31,6 +32,7 @@ def load_dataset(
             dataset_path,
             dataset_config["columns"],
             tokenizer,
+            seed=seed,
             names=dataset_config["names"],
             max_length=dataset_config["max_length"],
         )
