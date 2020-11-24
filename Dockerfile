@@ -24,5 +24,5 @@ COPY . /LinBERT
 RUN python -m pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-RUN python setup.py build_ext --inplace \
-    && pip install -e .
+RUN python setup.py build_ext --inplace
+RUN pip install -e .
