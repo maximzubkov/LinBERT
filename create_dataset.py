@@ -10,12 +10,7 @@ from utils import set_seed_
 data_path = "data"
 
 
-def train(
-        run_name: str,
-        dataset_name: str,
-        seed: int,
-        is_test: bool,
-):
+def train(run_name: str, dataset_name: str, seed: int, is_test: bool):
     set_seed_(seed)
 
     output_path = join(data_path, dataset_name)
