@@ -10,15 +10,14 @@ from models import LinBertForSequenceClassification, PosAttnBertForSequenceClass
 
 data_path = "data"
 
-SEED = 9
 
-
-def train(dataset_name: str, is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attention: bool):
-    set_seed_(SEED)
+def train(dataset_name: str, seed: int, is_test: bool, is_linear: bool, has_batch_norm: bool, has_pos_attention: bool):
+    set_seed_(seed)
 
     output_path = join(data_path, dataset_name)
     config, training_args = configure_bert_training(
         output_path,
+        seed=seed,
         is_test=is_test,
         has_batch_norm=has_batch_norm,
         has_pos_attention=has_pos_attention
@@ -41,6 +40,7 @@ def train(dataset_name: str, is_test: bool, is_linear: bool, has_batch_norm: boo
         dataset_name=dataset_name,
         type="train_small" if is_test else "train",
         tokenizer=tokenizer,
+        seed=seed
     )
 
     eval_dataset = get_dataset(
@@ -48,6 +48,7 @@ def train(dataset_name: str, is_test: bool, is_linear: bool, has_batch_norm: boo
         dataset_name=dataset_name,
         type="test_small" if is_test else "test",
         tokenizer=tokenizer,
+        seed=seed
     )
 
     trainer = Trainer(
@@ -66,9 +67,10 @@ if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("--dataset", choices=["yelp_polarity", "yelp_full"])
     arg_parser.add_argument("--test", action="store_true")
+    arg_parser.add_argument("--seed", type=int, default=9)
     arg_parser.add_argument("--resume", type=str, default=None)
     arg_parser.add_argument("--is_linear", action='store_true')
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     args = arg_parser.parse_args()
-    train(args.dataset, args.test, args.is_linear, args.has_batch_norm, args.has_pos_attention)
+    train(args.dataset, args.seed, args.test, args.is_linear, args.has_batch_norm, args.has_pos_attention)
