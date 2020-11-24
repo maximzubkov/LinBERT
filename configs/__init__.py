@@ -50,7 +50,7 @@ def configure_bert_training(output_path: str, is_test: bool,
             seed=SEED,
             do_train=True,
             do_eval=True,
-            eval_steps=500,
+            eval_steps=200,
             logging_steps=50,
             save_total_limit=2,
         )
