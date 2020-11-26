@@ -1,13 +1,12 @@
 from argparse import ArgumentParser
 from os.path import join
 
-from datasets import datasets, ClassificationDataset
 from transformers import BertTokenizerFast
 from transformers import Trainer
 
 from configs import configure_bert_training
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
-from utils import set_seed_, compute_metrics
+from utils import set_seed_, compute_metrics, get_classification_dataset
 
 data_path = "data"
 
@@ -40,25 +39,8 @@ def train(
     else:
         model = PosAttnBertForSequenceClassification(config=config)
 
-    dataset_config = datasets[dataset_name]
-
-    train_dataset = ClassificationDataset(
-        join(data_path, dataset_name, "train_small.csv" if is_test else "train.csv"),
-        dataset_config["columns"],
-        tokenizer=tokenizer,
-        seed=seed,
-        names=dataset_config["names"],
-        max_length=dataset_config["max_length"],
-    )
-
-    eval_dataset = ClassificationDataset(
-        join(data_path, dataset_name, "test_small.csv" if is_test else "test.csv"),
-        dataset_config["columns"],
-        tokenizer=tokenizer,
-        seed=seed,
-        names=dataset_config["names"],
-        max_length=dataset_config["max_length"],
-    )
+    train_dataset = get_classification_dataset(dataset_name, split="train", tokenizer=tokenizer)
+    eval_dataset = get_classification_dataset(dataset_name, split="test", tokenizer=tokenizer)
 
     trainer = Trainer(
         model=model,
