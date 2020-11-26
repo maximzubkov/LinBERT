@@ -45,7 +45,7 @@ def compute_metrics(pred: EvalPrediction):
     }
 
 
-def get_classification_dataset(name: str, split: str, tokenizer: PreTrainedTokenizerFast): 
+def get_classification_dataset(name: str, split: str, tokenizer: PreTrainedTokenizerFast):
     if name in list_datasets():
         dataset = load_dataset(name, split=split)
     else:
