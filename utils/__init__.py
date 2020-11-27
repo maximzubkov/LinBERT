@@ -41,10 +41,9 @@ def get_classification_dataset(name: str, split: str, max_length: int, tokenizer
     else:
         path = join(data_path, name, f"{split}.csv")
         dataset = load_dataset("csv", data_files=[path])["train"]
-    print(dataset)
     dataset = dataset.map(
-        lambda e: tokenizer(e["text"],  max_length=max_length, truncation=True, padding='max_length'),
+        lambda e: tokenizer(e["text"],  max_length=max_length, truncation=True, padding="max_length"),
         batched=True
     )
-    dataset.set_format(type='torch', columns=['input_ids', 'token_type_ids', 'attention_mask', 'label'])
+    dataset.set_format(type="torch", columns=["input_ids", "token_type_ids", "attention_mask", "label"])
     return dataset
