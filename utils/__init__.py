@@ -26,12 +26,12 @@ def compute_metrics(pred: EvalPrediction):
     labels = pred.label_ids
     preds = pred.predictions.argmax(-1)
     precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average='binary')
-    acc = accuracy_score(labels, preds)
+    accuracy = accuracy_score(labels, preds)
     return {
-        'accuracy': acc,
-        'f1': f1,
-        'precision': precision,
-        'recall': recall
+        "f1": f1,
+        "recall": recall,
+        "accuracy": accuracy,
+        "precision": precision,
     }
 
 
