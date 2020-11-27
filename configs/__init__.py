@@ -8,6 +8,7 @@ models_path = "models"
 
 def configure_bert_training(
         output_path: str,
+        num_labels: int,
         seed: int,
         is_test: bool,
         has_pos_attention: bool,
@@ -39,6 +40,7 @@ def configure_bert_training(
             num_hidden_layers=2,
             hidden_size=12,
             type_vocab_size=1,
+            num_labels=num_labels,
             has_pos_attention=has_pos_attention,
             has_batch_norm=has_batch_norm
         )
@@ -67,6 +69,7 @@ def configure_bert_training(
             num_attention_heads=4,
             num_hidden_layers=2,
             type_vocab_size=1,
+            num_labels=num_labels,
             has_pos_attention=has_pos_attention,
             has_batch_norm=has_batch_norm,
         )
