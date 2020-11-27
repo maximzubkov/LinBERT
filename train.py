@@ -6,10 +6,9 @@ from transformers import Trainer
 
 from configs import configure_bert_training
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
-from utils import set_seed_, compute_metrics, get_classification_dataset
+from utils import set_seed_, compute_metrics, get_classification_dataset, num_classes
 
 data_path = "data"
-
 
 def train(
         run_name: str,
@@ -29,7 +28,8 @@ def train(
         is_test=is_test,
         run_name=run_name,
         has_batch_norm=has_batch_norm,
-        has_pos_attention=has_pos_attention
+        has_pos_attention=has_pos_attention,
+        num_labels=num_classes[dataset_name]
     )
 
     tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
@@ -39,8 +39,19 @@ def train(
     else:
         model = PosAttnBertForSequenceClassification(config=config)
 
-    train_dataset = get_classification_dataset(dataset_name, split="train", tokenizer=tokenizer)
-    eval_dataset = get_classification_dataset(dataset_name, split="test", tokenizer=tokenizer)
+    train_dataset = get_classification_dataset(
+        dataset_name,
+        split="train_small" if is_test else "train",
+        max_length=config.max_position_embeddings,
+        tokenizer=tokenizer
+    )
+
+    eval_dataset = get_classification_dataset(
+        dataset_name,
+        split="test_small" if is_test else "test",
+        max_length=config.max_position_embeddings,
+        tokenizer=tokenizer
+    )
 
     trainer = Trainer(
         model=model,
