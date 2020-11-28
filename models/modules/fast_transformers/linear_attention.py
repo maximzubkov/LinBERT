@@ -23,8 +23,8 @@ class LinearAttention(Module):
         self.pos_attention = pos_attention
         self.feature_map = feature_map
         self.eps = eps
-        self.bn_k = nn.BatchNorm2d(config.num_attention_heads) if config.has_batch_norm else None
-        self.bn_q = nn.BatchNorm2d(config.num_attention_heads) if config.has_batch_norm else None
+        self.bn_k = nn.LayerNorm([config.max_position_embeddings, config.hidden_size]) if config.has_batch_norm else None
+        self.bn_q = nn.LayerNorm([config.max_position_embeddings, config.hidden_size]) if config.has_batch_norm else None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.bn_q is not None:
