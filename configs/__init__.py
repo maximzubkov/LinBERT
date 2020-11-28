@@ -12,6 +12,7 @@ def configure_bert_training(
         seed: int,
         is_test: bool,
         has_pos_attention: bool,
+        has_pos_bias: bool,
         has_batch_norm: bool,
         run_name: str = "default_yelp",
 ) -> Tuple[BertConfig, TrainingArguments]:
@@ -42,6 +43,7 @@ def configure_bert_training(
             type_vocab_size=1,
             num_labels=num_labels,
             has_pos_attention=has_pos_attention,
+            has_pos_bias=has_pos_bias,
             has_batch_norm=has_batch_norm
         )
     else:
@@ -71,6 +73,7 @@ def configure_bert_training(
             type_vocab_size=1,
             num_labels=num_labels,
             has_pos_attention=has_pos_attention,
+            has_pos_bias=has_pos_bias,
             has_batch_norm=has_batch_norm,
         )
 

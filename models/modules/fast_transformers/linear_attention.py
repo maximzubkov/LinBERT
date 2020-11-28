@@ -12,7 +12,7 @@ from torch.nn import Module
 
 from models.modules.common import elu_feature_map
 from models.modules.fast_transformers.causal_product import causal_dot_product
-from models.modules.positional_attention import PositionalAttention
+from models.modules.positional_attention import PositionalAttention, PositionalBias
 
 
 class LinearAttention(Module):
@@ -25,6 +25,7 @@ class LinearAttention(Module):
         self.eps = eps
         self.bn_k = nn.BatchNorm2d(config.num_attention_heads) if config.has_batch_norm else None
         self.bn_q = nn.BatchNorm2d(config.num_attention_heads) if config.has_batch_norm else None
+        self.pos_bias = PositionalBias(config.max_position_embeddings) if config.has_pos_bias else None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.bn_q is not None:
@@ -51,14 +52,24 @@ class LinearAttention(Module):
             if head_mask is not None:
                 kv = kv * head_mask.view(1, *head_mask.shape, 1, 1)
             # [batch_size, target_seq_len, n_heads]
-            z_qk = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
+            z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
             # [batch_size, target_seq_len, n_heads, p_s]
+            bv = torch.zeros_like(v, requires_grad=True)
+            if self.pos_bias is not None:
+                bias = self.pos_bias()
+                z = z + bias.sum(-1).view(1, bias.shape[0], 1)
+                print(bias.shape, v.shape)
+                bv = bv + torch.einsum("ls,nshm->nlhmd", bias, v)
+            #     print(bv.shape)
+
             if self.pos_attention is not None:
                 ppv, z_pp = self.pos_attention(q, v, attention_mask, head_mask)
-                z = z_qk + z_pp
-                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + torch.einsum("nlhmd,nlh->nlhm", ppv, 1 / z)
+                z = z + z_pp
+                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
+                    torch.einsum("nlhmd,nlh->nlhm", ppv + bv, 1 / z)
             else:
-                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z_qk)
+                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
+                    torch.einsum("nlhmd,nlh->nlhm", bv, 1 / z)
 
     def recurrent(self, q, k, v, memory=None):
         q = self.feature_map(q)

@@ -17,6 +17,17 @@ class PositionalAttention(nn.Module):
         return torch.matmul(positional_embeddings, self.pos_linear(positional_embeddings).transpose(1, 0))
 
 
+class PositionalBias(nn.Module):
+    def __init__(self, max_length: int):
+        super().__init__()
+        self.N = max_length
+        self.W = torch.nn.Parameter(torch.randn(2 * self.N), requires_grad=True)
+
+    def forward(self):
+        # [batch_size, seq_len, seq_len]
+        return torch.cat([self.W[i: i + self.N].unsqueeze(0) for i in range(self.N)], 0)
+
+
 class LinPositionalAttention(nn.Module):
     def __init__(self, config,
                  pos_embedding_layer: nn.Embedding,
