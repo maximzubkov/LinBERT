@@ -10,9 +10,15 @@ from transformers.trainer_utils import set_seed
 
 data_path = "data"
 
-num_classes = {
-    "yelp_full": 5,
-    "yelp_polarity": 2,
+dataset_config = {
+    "yelp_full": {
+        "num_labels": 5,
+        "labels": [1, 2, 3, 4, 5]
+    },
+    "yelp_polarity": {
+        "num_labels": 2,
+        "labels": [1, 2]
+    }
 }
 
 
@@ -35,8 +41,14 @@ def compute_metrics(pred: EvalPrediction):
     }
 
 
-def get_classification_dataset(name: str, split: str, max_length: int, tokenizer: PreTrainedTokenizerFast):
-    if name in list_datasets():
+def get_classification_dataset(
+        name: str,
+        split: str,
+        max_length: int,
+        tokenizer: PreTrainedTokenizerFast,
+        is_test: bool
+):
+    if (name in list_datasets()) and not is_test:
         dataset = load_dataset(name, split=split)
     else:
         path = join(data_path, name, f"{split}.csv")
@@ -45,5 +57,17 @@ def get_classification_dataset(name: str, split: str, max_length: int, tokenizer
         lambda e: tokenizer(e["text"],  max_length=max_length, truncation=True, padding="max_length"),
         batched=True
     )
+    label2idx = {
+        label: idx for idx, label in enumerate(dataset_config[name]["labels"])
+    }
+
+    def _update(e):
+        e.update({"label": [label2idx[label] for label in e["label"]]})
+        return e
+
+    dataset = dataset.map(
+        _update,
+        batched=True
+    )
     dataset.set_format(type="torch", columns=["input_ids", "token_type_ids", "attention_mask", "label"])
-    return dataset
+    return label2idx, dataset

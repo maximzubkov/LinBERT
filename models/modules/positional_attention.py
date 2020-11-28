@@ -17,6 +17,17 @@ class PositionalAttention(nn.Module):
         return torch.matmul(positional_embeddings, self.pos_linear(positional_embeddings).transpose(1, 0))
 
 
+class PositionalBias(nn.Module):
+    def __init__(self, max_length: int):
+        super().__init__()
+        self.N = max_length
+        self.W = torch.nn.Parameter(torch.randn(2 * self.N), requires_grad=True)
+
+    def forward(self):
+        # [batch_size, seq_len, seq_len]
+        return torch.cat([self.W[i: i + self.N].unsqueeze(0) for i in range(self.N)], 0)
+
+
 class LinPositionalAttention(nn.Module):
     def __init__(self, config,
                  pos_embedding_layer: nn.Embedding,
@@ -55,7 +66,7 @@ class LinPositionalAttention(nn.Module):
         pv = torch.einsum("nshd,nshm->nhmd", p, v)
         if head_mask is not None:
             pv = pv * head_mask.view(1, *head_mask.shape, 1, 1)
-        ppv = torch.einsum("nlhd,nhmd->nlhmd", p, pv)
+        ppv = torch.einsum("nlhd,nhmd->nlhm", p, pv)
         # [batch_size, target_seq_len, n_heads]
         z_pp = torch.einsum("nlhd,nhd->nlh", p, p.sum(dim=1)) + self.eps
         # [batch_size, target_seq_len, n_heads, p_s]

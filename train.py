@@ -6,7 +6,7 @@ from transformers import Trainer
 
 from configs import configure_bert_training
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
-from utils import set_seed_, compute_metrics, get_classification_dataset, num_classes
+from utils import set_seed_, compute_metrics, get_classification_dataset, dataset_config
 
 data_path = "data"
 
@@ -18,7 +18,8 @@ def train(
         is_test: bool,
         is_linear: bool,
         has_batch_norm: bool,
-        has_pos_attention: bool
+        has_pos_attention: bool,
+        has_pos_bias: bool
 ):
     set_seed_(seed)
 
@@ -30,7 +31,8 @@ def train(
         run_name=run_name,
         has_batch_norm=has_batch_norm,
         has_pos_attention=has_pos_attention,
-        num_labels=num_classes[dataset_name]
+        has_pos_bias=has_pos_bias,
+        num_labels=dataset_config[dataset_name]["num_labels"]
     )
 
     tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
@@ -40,18 +42,20 @@ def train(
     else:
         model = PosAttnBertForSequenceClassification(config=config)
 
-    train_dataset = get_classification_dataset(
+    _, train_dataset = get_classification_dataset(
         dataset_name,
         split="train_small" if is_test else "train",
         max_length=config.max_position_embeddings,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        is_test=is_test
     )
 
-    eval_dataset = get_classification_dataset(
+    _, eval_dataset = get_classification_dataset(
         dataset_name,
         split="test_small" if is_test else "test",
         max_length=config.max_position_embeddings,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        is_test=is_test
     )
 
     trainer = Trainer(
@@ -76,6 +80,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--is_linear", action='store_true')
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
+    arg_parser.add_argument("--has_pos_bias", action='store_true')
     args = arg_parser.parse_args()
     train(
         args.run_name,
@@ -84,5 +89,6 @@ if __name__ == "__main__":
         args.test,
         args.is_linear,
         args.has_batch_norm,
-        args.has_pos_attention
+        args.has_pos_attention,
+        args.has_pos_bias
     )

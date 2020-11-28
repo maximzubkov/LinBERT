@@ -6,12 +6,14 @@ from transformers import BertForSequenceClassification, BertModel
 from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import PositionalAttention
+from models.modules.positional_attention import PositionalBias
 
 
 class PosAttnBertSelfAttention(BertSelfAttention):
     def __init__(self, config, pos_attention: nn.Module = None):
         super().__init__(config)
         self.pos_attention = pos_attention
+        self.pos_bias = PositionalBias(config.max_position_embeddings) if config.has_pos_bias else None
 
     def forward(
         self,
@@ -54,6 +56,8 @@ class PosAttnBertSelfAttention(BertSelfAttention):
 
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
+        if self.pos_bias is not None:
+            attention_probs = attention_probs + self.pos_bias()
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
