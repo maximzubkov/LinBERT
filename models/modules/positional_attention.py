@@ -66,7 +66,7 @@ class LinPositionalAttention(nn.Module):
         pv = torch.einsum("nshd,nshm->nhmd", p, v)
         if head_mask is not None:
             pv = pv * head_mask.view(1, *head_mask.shape, 1, 1)
-        ppv = torch.einsum("nlhd,nhmd->nlhmd", p, pv)
+        ppv = torch.einsum("nlhd,nhmd->nlhm", p, pv)
         # [batch_size, target_seq_len, n_heads]
         z_pp = torch.einsum("nlhd,nhd->nlh", p, p.sum(dim=1)) + self.eps
         # [batch_size, target_seq_len, n_heads, p_s]

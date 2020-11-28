@@ -51,25 +51,25 @@ class LinearAttention(Module):
             kv = torch.einsum("nshd,nshm->nhmd", k, v)
             if head_mask is not None:
                 kv = kv * head_mask.view(1, *head_mask.shape, 1, 1)
+            # z equals to denominator value after applying attention
             # [batch_size, target_seq_len, n_heads]
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
+
+            # y equals to numerator value after applying attention
             # [batch_size, target_seq_len, n_heads, p_s]
-            bv = torch.zeros_like(v, requires_grad=True)
+            y = torch.zeros_like(v, requires_grad=True)
             if self.pos_bias is not None:
                 bias = self.pos_bias()
                 z = z + bias.sum(-1).view(1, bias.shape[0], 1)
-                print(bias.shape, v.shape)
-                bv = bv + torch.einsum("ls,nshm->nlhmd", bias, v)
-            #     print(bv.shape)
+                y = y + torch.einsum("nlhd,lj->njhd", v, bias)
 
             if self.pos_attention is not None:
                 ppv, z_pp = self.pos_attention(q, v, attention_mask, head_mask)
                 z = z + z_pp
-                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
-                    torch.einsum("nlhmd,nlh->nlhm", ppv + bv, 1 / z)
-            else:
-                return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
-                    torch.einsum("nlhmd,nlh->nlhm", bv, 1 / z)
+                y = y + ppv
+
+            return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
+                torch.einsum("nlhm,nlh->nlhm", y, 1 / z)
 
     def recurrent(self, q, k, v, memory=None):
         q = self.feature_map(q)
