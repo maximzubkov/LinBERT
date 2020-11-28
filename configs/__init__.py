@@ -10,6 +10,7 @@ def configure_bert_training(
         output_path: str,
         num_labels: int,
         seed: int,
+        max_seq_len: int,
         is_test: bool,
         has_pos_attention: bool,
         has_pos_bias: bool,
@@ -36,7 +37,7 @@ def configure_bert_training(
 
         config = BertConfig(
             vocab_size=52_000,
-            max_position_embeddings=3072,
+            max_position_embeddings=max_seq_len,
             num_attention_heads=2,
             num_hidden_layers=2,
             hidden_size=12,
@@ -66,7 +67,7 @@ def configure_bert_training(
 
         config = BertConfig(
             vocab_size=52_000,
-            max_position_embeddings=3072,
+            max_position_embeddings=max_seq_len,
             hidden_size=128,
             num_attention_heads=4,
             num_hidden_layers=2,

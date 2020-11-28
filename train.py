@@ -16,6 +16,7 @@ def train(
         dataset_name: str,
         seed: int,
         is_test: bool,
+        max_seq_len: int,
         is_linear: bool,
         has_batch_norm: bool,
         has_pos_attention: bool,
@@ -28,6 +29,7 @@ def train(
         output_path,
         seed=seed,
         is_test=is_test,
+        max_seq_len=max_seq_len,
         run_name=run_name,
         has_batch_norm=has_batch_norm,
         has_pos_attention=has_pos_attention,
@@ -77,18 +79,20 @@ if __name__ == "__main__":
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
     arg_parser.add_argument("--resume", type=str, default=None)
+    arg_parser.add_argument("--max_seq_len", type=int, default=1024)
     arg_parser.add_argument("--is_linear", action='store_true')
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     arg_parser.add_argument("--has_pos_bias", action='store_true')
     args = arg_parser.parse_args()
     train(
-        args.run_name,
-        args.dataset,
-        args.seed,
-        args.test,
-        args.is_linear,
-        args.has_batch_norm,
-        args.has_pos_attention,
-        args.has_pos_bias
+        run_name=args.run_name,
+        dataset_name=args.dataset,
+        seed=args.seed,
+        is_test=args.test,
+        max_seq_len=args.max_seq_len,
+        is_linear=args.is_linear,
+        has_batch_norm=args.has_batch_norm,
+        has_pos_attention=args.has_pos_attention,
+        has_pos_bias=args.has_pos_bias
     )
