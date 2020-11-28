@@ -12,7 +12,8 @@ config = BertConfig(
     num_hidden_layers=2,
     type_vocab_size=1,
     has_pos_attention=True,
-    has_batch_norm=False
+    has_pos_bias=False,
+    has_batch_norm=False,
 )
 
 
