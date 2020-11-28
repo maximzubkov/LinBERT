@@ -41,8 +41,6 @@ class LinPositionalAttention(nn.Module):
         assert pos_embedding_layer is not None, "No embedding layer provided"
         self.pos_embedding_layer = pos_embedding_layer
 
-        self.bn = nn.BatchNorm1d(config.num_attention_heads) if config.has_batch_norm else None
-
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
@@ -54,8 +52,6 @@ class LinPositionalAttention(nn.Module):
             self.num_attention_heads,
             self.attention_head_size
         )
-        if self.bn is not None:
-            p = self.bn(p)
 
         p = self.feature_map(p)
 
