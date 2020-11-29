@@ -31,7 +31,7 @@ def set_seed_(seed: int):
 def compute_metrics(pred: EvalPrediction):
     labels = pred.label_ids
     preds = pred.predictions.argmax(-1)
-    precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average='binary')
+    precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average='macro')
     accuracy = accuracy_score(labels, preds)
     return {
         "f1": f1,
