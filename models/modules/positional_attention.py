@@ -19,7 +19,7 @@ class PositionalAttention(nn.Module):
 
 class PositionalBias(nn.Module):
     def __init__(self, max_length: int):
-        super().__init__()
+        super(PositionalBias, self).__init__()
         self.N = max_length
         self.w = torch.nn.Parameter(torch.randn(self.N), requires_grad=True)
         self.w.data.uniform_(-0.1, 0.1)
