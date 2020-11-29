@@ -60,7 +60,7 @@ class LinearAttention(Module):
 
             # y equals to numerator value after applying attention
             # [batch_size, target_seq_len, n_heads, p_s]
-            y = torch.zeros_like(v, requires_grad=True)
+            y = torch.zeros_like(v)
             if self.pos_bias is not None:
                 bias = self.pos_bias()
                 z = z + bias.sum(-1).view(1, bias.shape[0], 1)
