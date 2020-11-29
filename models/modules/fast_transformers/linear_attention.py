@@ -60,7 +60,8 @@ class LinearAttention(Module):
 
             # y equals to numerator value after applying attention
             # [batch_size, target_seq_len, n_heads, p_s]
-            y = torch.zeros_like(v)
+            y = torch.einsum("nlhd,nhmd->nlhm", q, kv)
+
             if self.pos_bias is not None:
                 bias = self.pos_bias()
                 z = z + bias.sum(-1).view(1, bias.shape[0], 1)
@@ -71,8 +72,7 @@ class LinearAttention(Module):
                 z = z + z_pp
                 y = y + ppv
 
-            return torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, 1 / z) + \
-                torch.einsum("nlhm,nlh->nlhm", y, 1 / z)
+            return torch.einsum("nlhm,nlh->nlhm", y, 1 / z)
 
     def recurrent(self, q, k, v, memory=None):
         q = self.feature_map(q)
