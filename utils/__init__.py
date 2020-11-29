@@ -2,7 +2,7 @@ import random
 from os.path import join
 
 import numpy as np
-from datasets import load_dataset, list_datasets
+from datasets import load_dataset
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from transformers import EvalPrediction
 from transformers import PreTrainedTokenizerFast
@@ -48,11 +48,8 @@ def get_classification_dataset(
         tokenizer: PreTrainedTokenizerFast,
         is_test: bool
 ):
-    if (name in list_datasets()) and not is_test:
-        dataset = load_dataset(name, split=split)
-    else:
-        path = join(data_path, name, f"{split}.csv")
-        dataset = load_dataset("csv", data_files=[path])["train"]
+    path = join(data_path, name, f"{split}.csv")
+    dataset = load_dataset("csv", data_files=[path])["train"]
     dataset = dataset.map(
         lambda e: tokenizer(e["text"],  max_length=max_length, truncation=True, padding="max_length"),
         batched=True
