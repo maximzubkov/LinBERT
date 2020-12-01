@@ -9,3 +9,7 @@ def transpose_for_scores(x, num_attention_heads, attention_head_size):
 
 def elu_feature_map(x):
     return torch.nn.functional.elu(x) + 1
+
+
+def relu_feature_map(x):
+    return torch.nn.functional.leaky_relu(x)

@@ -20,7 +20,8 @@ def train(
         is_linear: bool,
         has_batch_norm: bool,
         has_pos_attention: bool,
-        has_pos_bias: bool
+        has_pos_bias: bool,
+        feature_map: str
 ):
     set_seed_(seed)
 
@@ -34,6 +35,7 @@ def train(
         has_batch_norm=has_batch_norm,
         has_pos_attention=has_pos_attention,
         has_pos_bias=has_pos_bias,
+        feature_map=feature_map,
         num_labels=dataset_config[dataset_name]["num_labels"]
     )
 
@@ -84,6 +86,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     arg_parser.add_argument("--has_pos_bias", action='store_true')
+    arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
     args = arg_parser.parse_args()
     train(
         run_name=args.run_name,
@@ -94,5 +97,6 @@ if __name__ == "__main__":
         is_linear=args.is_linear,
         has_batch_norm=args.has_batch_norm,
         has_pos_attention=args.has_pos_attention,
-        has_pos_bias=args.has_pos_bias
+        has_pos_bias=args.has_pos_bias,
+        feature_map=args.feature_map
     )

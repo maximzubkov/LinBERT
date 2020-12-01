@@ -10,18 +10,21 @@ import torch
 import torch.nn as nn
 from torch.nn import Module
 
-from models.modules.common import elu_feature_map
+from models.modules.common import elu_feature_map, relu_feature_map
 from models.modules.fast_transformers.causal_product import causal_dot_product
 from models.modules.positional_attention import PositionalAttention, PositionalBias
 
 
 class LinearAttention(Module):
-    def __init__(self, config, pos_attention: PositionalAttention = None,
-                 feature_map=elu_feature_map,
-                 eps=1e-6):
+    def __init__(self, config, pos_attention: PositionalAttention = None, eps=1e-6):
         super(LinearAttention, self).__init__()
         self.pos_attention = pos_attention
-        self.feature_map = feature_map
+        if config.feature_map == "elu":
+            self.feature_map = elu_feature_map
+        elif config.feature_map == "relu":
+            self.feature_map = relu_feature_map
+        else:
+            raise ValueError("Invalid feature map specified")
         self.eps = eps
 
         attn_head_size = config.hidden_size // config.num_attention_heads
