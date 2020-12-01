@@ -14,6 +14,7 @@ config = BertConfig(
     has_pos_attention=True,
     has_pos_bias=False,
     has_batch_norm=False,
+    feature_map="elu"
 )
 
 
