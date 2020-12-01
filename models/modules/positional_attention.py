@@ -26,8 +26,8 @@ class PositionalBias(nn.Module):
 
     def forward(self):
         # [batch_size, seq_len, seq_len]
-        z = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
-        return torch.cat([z[self.N - i - 1: 2 * self.N - i - 1].unsqueeze(0) for i in range(self.N)], 0)
+        z = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0).unsqueeze(0)
+        return torch.cat([z[:, self.N - i - 1: 2 * self.N - i - 1] for i in range(self.N)], 0)
 
 
 class LinPositionalAttention(nn.Module):
