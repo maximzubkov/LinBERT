@@ -73,7 +73,7 @@ class LinearAttention(Module):
                 y = y + ppv if y is not None else ppv
 
             inv_z = 1 / z
-            output = torch.einsum("nlhm,nlh->nlhm", y, inv_z)
+            output = torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, inv_z)
             if y is not None:
                 output = output + torch.einsum("nlhm,nlh->nlhm", y, inv_z)
             return output
