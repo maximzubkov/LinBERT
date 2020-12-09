@@ -66,9 +66,9 @@ class LinearAttention(Module):
             y = None
 
             if self.pos_bias is not None:
-                bias = self.pos_bias()
-                z = z + bias.sum(-1).view(1, bias.shape[0], 1)
-                y = torch.einsum("nlhd,lj->njhd", v, bias)
+                pbv, z_pb = self.pos_bias(v)
+                z = z + z_pb
+                y = pbv
 
             if self.pos_attention is not None:
                 ppv, z_pp = self.pos_attention(q, v, attention_mask, head_mask)
