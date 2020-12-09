@@ -46,7 +46,8 @@ class PositionalBias(nn.Module):
         o_ = nn.functional.pad(o_, (seq_len - 1, 0))
         o_fft = torch.rfft(o_, 2, onesided=False)
 
-        v_ = v.permute(0, 2, 3, 1).view(batch_size * n_heads * emb_dim, seq_len)
+        v_ = v.permute(0, 2, 3, 1).reshape(batch_size * n_heads * emb_dim, seq_len)
+
         v_ = nn.functional.pad(v_, (seq_len - 1, 0))
         v_fft = torch.rfft(v_, 2, onesided=False)
 
@@ -55,7 +56,6 @@ class PositionalBias(nn.Module):
         pbv = pbv.reshape(batch_size, n_heads, emb_dim, seq_len).permute(0, 3, 1, 2)
 
         z_pb = torch.irfft(self._complex_mul(z_fft, o_fft), 2, signal_sizes=o_.shape, onesided=False)
-        print(z_pb)
         z_pb = z_pb[:, :seq_len]
         z_pb = z_pb.reshape(batch_size, n_heads, seq_len).transpose(1, 2)
 
