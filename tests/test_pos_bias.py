@@ -19,11 +19,11 @@ config = BertConfig(
 
 @torch.no_grad()
 def test_pos_bias():
-    seq_len = config.max_position_embeddings
-    pos_bias = PositionalBias(seq_len)
+    pos_bias = PositionalBias(config)
     pos_bias.eval()
 
-    batch_size = 1
+    batch_size = 4
+    seq_len = config.max_position_embeddings
     num_heads = config.num_attention_heads
     embed_dim = int(config.hidden_size / config.num_attention_heads)
     v = torch.rand(batch_size, seq_len, num_heads, embed_dim)

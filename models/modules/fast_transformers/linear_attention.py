@@ -31,7 +31,7 @@ class LinearAttention(Module):
         max_seq_len = config.max_position_embeddings
         self.bn_k = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
         self.bn_q = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
-        self.pos_bias = PositionalBias(config.max_position_embeddings) if config.has_pos_bias else None
+        self.pos_bias = PositionalBias(config) if config.has_pos_bias else None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.bn_q is not None:
