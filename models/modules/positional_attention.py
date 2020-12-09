@@ -24,10 +24,42 @@ class PositionalBias(nn.Module):
         self.w = torch.nn.Parameter(torch.randn(self.N), requires_grad=True)
         self.w.data.uniform_(-0.1, 0.1)
 
-    def forward(self):
+    @staticmethod
+    def _complex_mul(x, y):
+        assert x.shape[-1] == 2 and y.shape[-1] == 2, 'Last dimension must be 2'
+        return torch.stack(
+            (x[..., 0] * y[..., 0] - x[..., 1] * y[..., 1],
+             x[..., 0] * y[..., 1] + x[..., 1] * y[..., 0]),
+            dim=-1)
+
+    def forward(self, v):
         # [batch_size, seq_len, seq_len]
-        z = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0).unsqueeze(0)
-        return torch.cat([z[:, self.N - i - 1: 2 * self.N - i - 1] for i in range(self.N)], 0)
+        z = torch.cat([
+            self.w[-1].unsqueeze(0),  # w_{N-1}
+            torch.flip(self.w[1:], dims=[0]),  # w_{N-1}, w_{N-2}, ..., w_{1}
+            self.w[:-1]  # w_{0}, w_{1}, ..., w_{N-2}
+        ], dim=0)
+        z_fft = torch.rfft(z, 1, onesided=False)
+        batch_size, seq_len, n_heads, emb_dim = v.shape
+
+        o_ = torch.ones(batch_size * n_heads, seq_len)
+        o_ = nn.functional.pad(o_, (seq_len - 1, 0))
+        o_fft = torch.rfft(o_, 2, onesided=False)
+
+        v_ = v.permute(0, 2, 3, 1).view(batch_size * n_heads * emb_dim, seq_len)
+        v_ = nn.functional.pad(v_, (seq_len - 1, 0))
+        v_fft = torch.rfft(v_, 2, onesided=False)
+
+        pbv = torch.irfft(self._complex_mul(v_fft, z_fft), 2, signal_sizes=v_.shape, onesided=False)
+        pbv = pbv[:, :seq_len]
+        pbv = pbv.reshape(batch_size, n_heads, emb_dim, seq_len).permute(0, 3, 1, 2)
+
+        z_pb = torch.irfft(self._complex_mul(z_fft, o_fft), 2, signal_sizes=o_.shape, onesided=False)
+        print(z_pb)
+        z_pb = z_pb[:, :seq_len]
+        z_pb = z_pb.reshape(batch_size, n_heads, seq_len).transpose(1, 2)
+
+        return pbv, z_pb
 
 
 class LinPositionalAttention(nn.Module):
