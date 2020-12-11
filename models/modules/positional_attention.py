@@ -23,9 +23,9 @@ class PositionalBias(nn.Module):
         self.seq_len = config.max_position_embeddings
         self.w = torch.nn.Parameter(torch.randn(self.seq_len), requires_grad=True)
         self.w.data.uniform_(-0.1, 0.1)
-        self.o_ = torch.ones(config.num_attention_heads, self.seq_len, requires_grad=False)
+        self.o_ = torch.ones(config.num_attention_heads, self.seq_len)
         self.o_ = nn.functional.pad(self.o_, (self.seq_len - 1, 0))
-        self.o_fft = torch.rfft(self.o_, 2, onesided=False)
+        self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 2), requires_grad=False)
 
     @staticmethod
     def _complex_mul(x, y):
@@ -42,21 +42,21 @@ class PositionalBias(nn.Module):
             torch.flip(self.w[1:], dims=[0]),  # w_{N-1}, w_{N-2}, ..., w_{1}
             self.w[:-1]  # w_{0}, w_{1}, ..., w_{N-2}
         ], dim=0)
-        z_fft = torch.rfft(z, 1, onesided=False)
+        z_fft = torch.rfft(z, 1)
         batch_size, seq_len, n_heads, emb_dim = v.shape
 
         v_ = v.permute(0, 2, 3, 1).reshape(batch_size * n_heads * emb_dim, seq_len)
 
         v_ = nn.functional.pad(v_, (seq_len - 1, 0))
-        v_fft = torch.rfft(v_, 2, onesided=False)
+        v_fft = torch.rfft(v_, 2)
 
-        pbv = torch.irfft(self._complex_mul(v_fft, z_fft), 2, signal_sizes=v_.shape, onesided=False)
+        pbv = torch.irfft(self._complex_mul(v_fft, z_fft), 2, signal_sizes=v_.shape)
         pbv = pbv[:, :seq_len]
         pbv = pbv.reshape(batch_size, n_heads, emb_dim, seq_len).permute(0, 3, 1, 2)
 
-        z_pb = torch.irfft(self._complex_mul(z_fft, self.o_fft), 2, signal_sizes=self.o_.shape, onesided=False)
+        z_pb = torch.irfft(self._complex_mul(z_fft, self.o_fft), 2, signal_sizes=self.o_.shape)
         z_pb = z_pb[:, :seq_len]
-        z_pb = z_pb.reshape(1, n_heads, seq_len).transpose(1, 2)
+        z_pb = z_pb.transpose(1, 0).unsqueeze(0)
 
         return pbv, z_pb
 
