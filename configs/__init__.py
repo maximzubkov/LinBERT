@@ -13,10 +13,10 @@ def configure_bert_training(
         max_seq_len: int,
         is_test: bool,
         has_pos_attention: bool,
-        has_pos_bias: bool,
         has_batch_norm: bool,
         run_name: str = "default_yelp",
-        feature_map: str = "elu"
+        feature_map: str = "elu",
+        pos_bias_type: str = None
 ) -> Tuple[BertConfig, TrainingArguments]:
     if is_test:
         training_args = TrainingArguments(
@@ -45,9 +45,9 @@ def configure_bert_training(
             type_vocab_size=1,
             num_labels=num_labels,
             has_pos_attention=has_pos_attention,
-            has_pos_bias=has_pos_bias,
             has_batch_norm=has_batch_norm,
-            feature_map=feature_map
+            feature_map=feature_map,
+            pos_bias_type=pos_bias_type
         )
     else:
         training_args = TrainingArguments(
@@ -76,9 +76,9 @@ def configure_bert_training(
             type_vocab_size=1,
             num_labels=num_labels,
             has_pos_attention=has_pos_attention,
-            has_pos_bias=has_pos_bias,
             has_batch_norm=has_batch_norm,
-            feature_map=feature_map
+            feature_map=feature_map,
+            pos_bias_type=pos_bias_type
         )
 
     return config, training_args

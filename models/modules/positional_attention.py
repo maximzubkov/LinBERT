@@ -20,12 +20,33 @@ class PositionalAttention(nn.Module):
 class PositionalBias(nn.Module):
     def __init__(self, config):
         super(PositionalBias, self).__init__()
+        self.type_ = config.pos_bias_type
         self.seq_len = config.max_position_embeddings
         self.w = torch.nn.Parameter(torch.randn(self.seq_len), requires_grad=True)
         self.w.data.uniform_(-0.1, 0.1)
-        self.o_ = torch.ones(config.num_attention_heads, self.seq_len)
-        self.o_ = nn.functional.pad(self.o_, (self.seq_len - 1, 0))
-        self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 2), requires_grad=False)
+        if self.type_ == "fft":
+            self.o_ = torch.ones(config.num_attention_heads, self.seq_len)
+            self.o_ = nn.functional.pad(self.o_, [self.seq_len - 1, 0])
+            self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 2), requires_grad=False)
+
+    def forward(self, v):
+        if self.type_ == "naive":
+            return self._naive(v)
+        elif self.type_ == "fft":
+            return self._fft(v)
+        else:
+            raise ValueError("Unknown positional bias type")
+
+    def _naive(self, v):
+        # [batch_size, seq_len, seq_len]
+        p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
+        bias = torch.cat([
+            p[self.seq_len - i - 1: 2 * self.seq_len - i - 1].unsqueeze(0)
+            for i in range(self.seq_len)
+        ], 0)
+        z_pb = bias.sum(-1).view(1, bias.shape[0], 1)
+        pbv = torch.einsum("nlhd,lj->njhd", v, bias)
+        return pbv, z_pb
 
     @staticmethod
     def _complex_mul(x, y):
@@ -35,19 +56,20 @@ class PositionalBias(nn.Module):
              x[..., 0] * y[..., 1] + x[..., 1] * y[..., 0]),
             dim=-1)
 
-    def forward(self, v):
+    def _fft(self, v):
         # [batch_size, seq_len, seq_len]
         z = torch.cat([
             self.w[-1].unsqueeze(0),  # w_{N-1}
             torch.flip(self.w[1:], dims=[0]),  # w_{N-1}, w_{N-2}, ..., w_{1}
             self.w[:-1]  # w_{0}, w_{1}, ..., w_{N-2}
         ], dim=0)
+
         z_fft = torch.rfft(z, 1)
         batch_size, seq_len, n_heads, emb_dim = v.shape
 
         v_ = v.permute(0, 2, 3, 1).reshape(batch_size * n_heads * emb_dim, seq_len)
 
-        v_ = nn.functional.pad(v_, (seq_len - 1, 0))
+        v_ = nn.functional.pad(v_, [seq_len - 1, 0])
         v_fft = torch.rfft(v_, 2)
 
         pbv = torch.irfft(self._complex_mul(v_fft, z_fft), 2, signal_sizes=v_.shape)
