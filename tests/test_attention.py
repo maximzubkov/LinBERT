@@ -5,8 +5,8 @@ from models.modules.fast_transformers import LinearAttention
 
 config = BertConfig(
     has_pos_attention=False,
-    has_pos_bias=False,
     has_batch_norm=False,
+    pos_bias_type=None,
     feature_map="elu"
 )
 

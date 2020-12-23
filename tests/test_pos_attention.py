@@ -12,7 +12,7 @@ config = BertConfig(
     num_hidden_layers=2,
     type_vocab_size=1,
     has_pos_attention=True,
-    has_pos_bias=False,
+    pos_bias_type=None,
     has_batch_norm=False,
     feature_map="elu"
 )
