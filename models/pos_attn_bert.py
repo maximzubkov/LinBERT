@@ -13,7 +13,7 @@ class PosAttnBertSelfAttention(BertSelfAttention):
     def __init__(self, config, pos_attention: nn.Module = None):
         super().__init__(config)
         self.pos_attention = pos_attention
-        self.pos_bias = PositionalBias(config.max_position_embeddings) if config.has_pos_bias else None
+        self.pos_bias = PositionalBias(config.max_position_embeddings) if config.pos_bias_type is not None else None
 
     def forward(
         self,
