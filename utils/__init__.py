@@ -46,10 +46,11 @@ def get_classification_dataset(
         split: str,
         max_length: int,
         tokenizer: PreTrainedTokenizerFast,
+        cache_dir: str,
         is_test: bool
 ):
     path = join(data_path, name, f"{split}.csv")
-    dataset = load_dataset("csv", data_files=[path])["train"]
+    dataset = load_dataset("csv", data_files=[path], cache_dir=cache_dir)["train"]
     dataset = dataset.map(
         lambda e: tokenizer(e["text"],  max_length=max_length, truncation=True, padding="max_length"),
         batched=True

@@ -51,7 +51,8 @@ def train(
         split="train_small" if is_test else "train",
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
-        is_test=is_test
+        is_test=is_test,
+        cache_dir=data_path
     )
 
     _, eval_dataset = get_classification_dataset(
@@ -59,7 +60,8 @@ def train(
         split="test_small" if is_test else "test",
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
-        is_test=is_test
+        is_test=is_test,
+        cache_dir=data_path
     )
 
     trainer = Trainer(
