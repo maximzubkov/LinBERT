@@ -20,8 +20,8 @@ def train(
         is_linear: bool,
         has_batch_norm: bool,
         has_pos_attention: bool,
-        has_pos_bias: bool,
-        feature_map: str
+        feature_map: str,
+        pos_bias_type: str = None
 ):
     set_seed_(seed)
 
@@ -34,9 +34,9 @@ def train(
         run_name=run_name,
         has_batch_norm=has_batch_norm,
         has_pos_attention=has_pos_attention,
-        has_pos_bias=has_pos_bias,
         feature_map=feature_map,
-        num_labels=dataset_config[dataset_name]["num_labels"]
+        num_labels=dataset_config[dataset_name]["num_labels"],
+        pos_bias_type=pos_bias_type
     )
 
     tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
@@ -51,7 +51,8 @@ def train(
         split="train_small" if is_test else "train",
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
-        is_test=is_test
+        is_test=is_test,
+        cache_dir=data_path
     )
 
     _, eval_dataset = get_classification_dataset(
@@ -59,7 +60,8 @@ def train(
         split="test_small" if is_test else "test",
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
-        is_test=is_test
+        is_test=is_test,
+        cache_dir=data_path
     )
 
     trainer = Trainer(
@@ -85,8 +87,8 @@ if __name__ == "__main__":
     arg_parser.add_argument("--is_linear", action='store_true')
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
-    arg_parser.add_argument("--has_pos_bias", action='store_true')
     arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
+    arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive"], default=None)
     args = arg_parser.parse_args()
     train(
         run_name=args.run_name,
@@ -97,6 +99,6 @@ if __name__ == "__main__":
         is_linear=args.is_linear,
         has_batch_norm=args.has_batch_norm,
         has_pos_attention=args.has_pos_attention,
-        has_pos_bias=args.has_pos_bias,
-        feature_map=args.feature_map
+        feature_map=args.feature_map,
+        pos_bias_type=args.pos_bias_type
     )
