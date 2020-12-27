@@ -6,7 +6,8 @@ from transformers import Trainer
 
 from configs import configure_bert_training
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
-from utils import set_seed_, compute_metrics, get_classification_dataset, dataset_config
+from utils import set_seed_, compute_metrics
+from dataset import get_dataset, dataset_config
 
 data_path = "data"
 
@@ -46,18 +47,18 @@ def train(
     else:
         model = PosAttnBertForSequenceClassification(config=config)
 
-    _, train_dataset = get_classification_dataset(
+    _, train_dataset = get_dataset(
         dataset_name,
-        split="train_small" if is_test else "train",
+        split="train",
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
         is_test=is_test,
         cache_dir=data_path
     )
 
-    _, eval_dataset = get_classification_dataset(
+    _, eval_dataset = get_dataset(
         dataset_name,
-        split="test_small" if is_test else "test",
+        split="test",
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
         is_test=is_test,
@@ -78,7 +79,7 @@ def train(
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
-    arg_parser.add_argument("--dataset", choices=["yelp_polarity", "yelp_full"])
+    arg_parser.add_argument("--dataset", choices=list(dataset_config.keys()))
     arg_parser.add_argument("--run_name", type=str)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
