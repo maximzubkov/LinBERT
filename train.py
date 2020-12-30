@@ -42,7 +42,7 @@ def train(
     if dataset_name in ["yelp_polarity", "yelp_full"]:
         tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
     elif dataset_name in ["pf_6_full"]:
-        vocab_path = join(data_path, dataset_name) + "_small" if is_test else ""
+        vocab_path = join(data_path, dataset_name) + ("_small" if is_test else "")
         tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
 
     if is_linear:
