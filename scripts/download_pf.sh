@@ -76,4 +76,4 @@ unzip $DATA_DIR/$ZIP_FILE -d $DATA_DIR
 mv $DATA_DIR/$OLD_DATASET_NAME $DATA_DIR/$DATASET_NAME
 mv $DATA_DIR/$DATASET_NAME/val $DATA_DIR/$DATASET_NAME/test
 
-python preprocess_pf.py --dataset $DATASET_NAME
+python scripts/preprocess_pf.py --dataset $DATASET_NAME
