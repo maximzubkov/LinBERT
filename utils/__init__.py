@@ -1,25 +1,9 @@
 import random
-from os.path import join
 
 import numpy as np
-from datasets import load_dataset
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from transformers import EvalPrediction
-from transformers import PreTrainedTokenizerFast
 from transformers.trainer_utils import set_seed
-
-data_path = "data"
-
-dataset_config = {
-    "yelp_full": {
-        "num_labels": 5,
-        "labels": [1, 2, 3, 4, 5]
-    },
-    "yelp_polarity": {
-        "num_labels": 2,
-        "labels": [1, 2]
-    }
-}
 
 
 def set_seed_(seed: int):
@@ -39,33 +23,3 @@ def compute_metrics(pred: EvalPrediction):
         "accuracy": accuracy,
         "precision": precision,
     }
-
-
-def get_classification_dataset(
-        name: str,
-        split: str,
-        max_length: int,
-        tokenizer: PreTrainedTokenizerFast,
-        cache_dir: str,
-        is_test: bool
-):
-    path = join(data_path, name, f"{split}.csv")
-    dataset = load_dataset("csv", data_files=[path], cache_dir=cache_dir)["train"]
-    dataset = dataset.map(
-        lambda e: tokenizer(e["text"],  max_length=max_length, truncation=True, padding="max_length"),
-        batched=True
-    )
-    label2idx = {
-        label: idx for idx, label in enumerate(dataset_config[name]["labels"])
-    }
-
-    def _update(e):
-        e.update({"label": [label2idx[label] for label in e["label"]]})
-        return e
-
-    dataset = dataset.map(
-        _update,
-        batched=True
-    )
-    dataset.set_format(type="torch", columns=["input_ids", "token_type_ids", "attention_mask", "label"])
-    return label2idx, dataset
