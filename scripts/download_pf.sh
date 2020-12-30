@@ -66,14 +66,14 @@ if $DEV
 then
   unzip $DATA_DIR/$ZIP_FILE $OLD_DATASET_NAME/train/0.npz
   unzip $DATA_DIR/$ZIP_FILE $OLD_DATASET_NAME/train/1.npz
-  unzip $DATA_DIR/$ZIP_FILE $OLD_DATASET_NAME/train/2.npz
-  mkdir $OLD_DATASET_NAME/test
-  mv $OLD_DATASET_NAME/train/2.npz $OLD_DATASET_NAME/test/0.npz
+  unzip $DATA_DIR/$ZIP_FILE $OLD_DATASET_NAME/val/0.npz
+  mv $OLD_DATASET_NAME/val $OLD_DATASET_NAME/test
   mv $OLD_DATASET_NAME "$DATA_DIR"/${DATASET_NAME}_small
   python scripts/preprocess_pf.py --dataset ${DATASET_NAME}_small
 fi
 
 unzip $DATA_DIR/$ZIP_FILE -d $DATA_DIR
 mv $DATA_DIR/$OLD_DATASET_NAME $DATA_DIR/$DATASET_NAME
+mv $DATA_DIR/$DATASET_NAME/val $DATA_DIR/$DATASET_NAME/test
 
 python preprocess_pf.py --dataset $DATASET_NAME
