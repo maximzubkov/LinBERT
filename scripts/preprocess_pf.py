@@ -1,10 +1,11 @@
+import csv
 from argparse import ArgumentParser
 from os import listdir, mkdir
 from os.path import join, isfile, exists
-from skimage.transform import resize
 
 import numpy as np
 import pandas as pd
+from skimage.transform import resize
 from tqdm import tqdm
 
 data_path = "data"
@@ -32,12 +33,12 @@ def preprocess(dataset: str, shape: tuple = (100, 100)):
                 loaded = np.load(file_path)
                 df = pd.DataFrame()
                 df["text"] = [
-                    " ".join([
-                        str(e) for e in resize(img, shape, preserve_range=True).reshape(-1).astype("int")
-                    ]) for img in loaded["images"]
+                    "\"" + " ".join([
+                        str(e) for e in resize(img, shape, preserve_range=True).reshape(-1).astype(int)
+                    ]) + "\"" for img in loaded["images"]
                 ]
-                df["label"] = loaded["labels"].reshape(-1)
-                df.to_csv(join(csv_path, f"""{file.split(".")[0]}.csv"""), index=False)
+                df["label"] = ["\"" + str(label) + "\"" for label in loaded["labels"].reshape(-1)]
+                df.to_csv(join(csv_path, f"""{file.split(".")[0]}.csv"""), index=False, quoting=csv.QUOTE_NONE)
 
 
 if __name__ == "__main__":
