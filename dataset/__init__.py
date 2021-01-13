@@ -17,8 +17,11 @@ dataset_config = {
     },
     "pf_6_full": {
         "num_labels": 2,
-        "labels": [1, 2],
-        "im_size": [300, 300]
+        "labels": [0, 1],
+    },
+    "pf_6_full_small": {
+        "num_labels": 2,
+        "labels": [0, 1],
     }
 }
 
@@ -28,8 +31,11 @@ def get_dataset(
         split: str,
         max_length: int,
         cache_dir: str,
+        seed: int,
         is_test: bool,
         tokenizer: PreTrainedTokenizerFast,
+        return_attention_mask: bool = False,
+        return_token_type_ids: bool = False,
 ):
     if name in ["yelp_full", "yelp_polarity"]:
         split = f"{split}_small" if is_test else split
@@ -40,7 +46,7 @@ def get_dataset(
         path = join(data_path, name, split, "csv")
         paths = [join(path, file) for file in listdir(path)]
         batch_size = 100
-        max_length = 300 * 300
+        max_length = max_length + 2
     else:
         raise ValueError("Unknown Dataset")
 
@@ -49,8 +55,11 @@ def get_dataset(
         paths=paths,
         max_length=max_length,
         cache_dir=cache_dir,
+        seed=seed,
         tokenizer=tokenizer,
-        batch_size=batch_size
+        batch_size=batch_size,
+        return_attention_mask=return_attention_mask,
+        return_token_type_ids=return_token_type_ids,
     )
 
 
@@ -60,23 +69,40 @@ def _hf_dataset(
         max_length: int,
         tokenizer: PreTrainedTokenizerFast,
         cache_dir: str,
-        batch_size: int = 1000
+        seed: int,
+        batch_size: int = 1000,
+        return_attention_mask: bool = False,
+        return_token_type_ids: bool = False,
 ):
     dataset = load_dataset("csv", data_files=paths, cache_dir=cache_dir)["train"]
-    dataset = dataset.map(
-        lambda e: tokenizer(e["text"], max_length=max_length, truncation=True, padding="max_length"),
-        batched=True, batch_size=batch_size
-    )
 
     label2idx = {label: idx for idx, label in enumerate(dataset_config[name]["labels"])}
 
     def _update(e):
-        e.update({"label": [label2idx[label] for label in e["label"]]})
-        return e
+        e_ = tokenizer(
+            e["text"],
+            max_length=max_length,
+            truncation=True,
+            padding="max_length",
+            return_attention_mask=return_attention_mask,
+            return_token_type_ids=return_token_type_ids
+        )
+        e_.update({"label": [label2idx[label] for label in e["label"]]})
+        return e_
 
     dataset = dataset.map(
         _update,
-        batched=True
+        batched=True,
+        batch_size=batch_size,
+        writer_batch_size=100000
     )
-    dataset.set_format(type="torch", columns=["input_ids", "token_type_ids", "attention_mask", "label"])
+    columns = ["input_ids", "label"]
+
+    if return_attention_mask:
+        columns.append("attention_mask")
+    if return_token_type_ids:
+        columns.append("token_type_ids")
+
+    dataset.set_format(type="torch", columns=columns)
+    dataset.shuffle(seed=seed)
     return label2idx, dataset

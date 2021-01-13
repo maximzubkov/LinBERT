@@ -56,6 +56,7 @@ def train(
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
         is_test=is_test,
+        seed=seed,
         cache_dir=data_path
     )
 
@@ -65,6 +66,7 @@ def train(
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
         is_test=is_test,
+        seed=seed,
         cache_dir=data_path
     )
 
