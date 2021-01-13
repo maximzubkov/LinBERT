@@ -43,5 +43,7 @@ def preprocess(dataset: str, shape: tuple = (100, 100)):
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("--dataset")
+    arg_parser.add_argument("--x_shape", type=int)
+    arg_parser.add_argument("--y_shape", type=int)
     args = arg_parser.parse_args()
-    preprocess(dataset=args.dataset)
+    preprocess(dataset=args.dataset, shape=(args.x_shape, args.y_shape))

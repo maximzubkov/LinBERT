@@ -4,6 +4,15 @@
 DEV=false
 DATA_DIR=./data
 DATASET_NAME=pf_6_full
+X_SHAPE=100
+Y_SHAPE=100
+
+function is_int(){
+  if [[ ! "$1" =~ ^[+-]?[0-9]+$ ]]; then
+    echo "Non integer {$1} passed in --$2"
+    exit 1
+  fi
+}
 
 while (( "$#" )); do
   case "$1" in
@@ -11,6 +20,7 @@ while (( "$#" )); do
       echo "options:"
       echo "-h, --help                     show brief help"
       echo "-d, --dataset=NAME             specify dataset name, available: pf_6_full, pf_9_full, pf_14_full"
+      echo "-x_shape / y_shape             specify x / y shape of image after resizing"
       echo "--dev                          pass it if developer mode should be used, default false"
       exit 0
       ;;
@@ -20,6 +30,26 @@ while (( "$#" )); do
         shift 2
       else
         echo "Specify dataset name"
+        exit 1
+      fi
+      ;;
+    --x_shape*)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        is_int "$2" "x_shape"
+        X_SHAPE=$2
+        shift 2
+      else
+        echo "Specify x shape"
+        exit 1
+      fi
+      ;;
+    --y_shape*)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        is_int "$2" "y_shape"
+        Y_SHAPE=$2
+        shift 2
+      else
+        echo "Specify y shape"
         exit 1
       fi
       ;;
@@ -69,11 +99,11 @@ then
   unzip $DATA_DIR/$ZIP_FILE $OLD_DATASET_NAME/val/0.npz
   mv $OLD_DATASET_NAME/val $OLD_DATASET_NAME/test
   mv $OLD_DATASET_NAME "$DATA_DIR"/${DATASET_NAME}_small
-  python scripts/preprocess_pf.py --dataset ${DATASET_NAME}_small
+  python scripts/preprocess_pf.py --dataset=${DATASET_NAME}_small --x_shape=$X_SHAPE --y_shape=$Y_SHAPE
 fi
 
 unzip $DATA_DIR/$ZIP_FILE -d $DATA_DIR
 mv $DATA_DIR/$OLD_DATASET_NAME $DATA_DIR/$DATASET_NAME
 mv $DATA_DIR/$DATASET_NAME/val $DATA_DIR/$DATASET_NAME/test
 
-python scripts/preprocess_pf.py --dataset $DATASET_NAME
+python scripts/preprocess_pf.py --dataset=$DATASET_NAME --x_shape=$X_SHAPE --y_shape=$Y_SHAPE
