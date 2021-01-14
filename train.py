@@ -26,6 +26,12 @@ def train(
 ):
     set_seed_(seed)
 
+    if dataset_name in ["yelp_polarity", "yelp_full"]:
+        tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    elif dataset_name in ["pf_6_full", "pf_9_full", "pf_14_full"]:
+        vocab_path = join(data_path, dataset_name) + ("_small" if is_test else "")
+        tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
+
     output_path = join(data_path, dataset_name)
     config, training_args = configure_bert_training(
         output_path,
@@ -36,14 +42,10 @@ def train(
         has_batch_norm=has_batch_norm,
         has_pos_attention=has_pos_attention,
         feature_map=feature_map,
+        vocab_size=tokenizer.vocab_size,
         num_labels=dataset_config[dataset_name]["num_labels"],
         pos_bias_type=pos_bias_type
     )
-    if dataset_name in ["yelp_polarity", "yelp_full"]:
-        tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
-    elif dataset_name in ["pf_6_full"]:
-        vocab_path = join(data_path, dataset_name) + ("_small" if is_test else "")
-        tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
 
     if is_linear:
         model = LinBertForSequenceClassification(config=config)
@@ -56,6 +58,7 @@ def train(
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
         is_test=is_test,
+        seed=seed,
         cache_dir=data_path
     )
 
@@ -65,6 +68,7 @@ def train(
         max_length=config.max_position_embeddings,
         tokenizer=tokenizer,
         is_test=is_test,
+        seed=seed,
         cache_dir=data_path
     )
 
@@ -82,7 +86,9 @@ def train(
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
-    arg_parser.add_argument("--dataset", choices=list(dataset_config.keys()))
+    arg_parser.add_argument(
+        "--dataset", choices=["pf_6_full", "pf_9_full", "pf_14_full"] + ["yelp_polarity", "yelp_full"]
+    )
     arg_parser.add_argument("--run_name", type=str)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
