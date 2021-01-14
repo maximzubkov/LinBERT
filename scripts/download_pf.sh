@@ -73,14 +73,17 @@ INDEX=${DATASET_NAME:3:1}
 if [ "$INDEX" -eq "6" ]
 then
   ZIP_FILE=pf6.zip
+  OLD_DATASET_NAME=curv_contour_length_6_full
   LINK="https://drive.google.com/u/0/uc?id=13y1cclbbyqm3pqCtxX0D5F_rBo9s2bKb"
 elif [ "$INDEX" -eq "9" ]
 then
   ZIP_FILE=pf9.zip
+  OLD_DATASET_NAME=curv_contour_length_9_full
   LINK="https://drive.google.com/u/0/uc?id=1ZrZvfWcl1OvUQWxnkQxOdyantpA7NTR8"
 elif [ "$INDEX" -eq "1" ]
 then
   ZIP_FILE=pf14.zip
+  OLD_DATASET_NAME=curv_contour_length_14_full
   LINK="https://drive.google.com/u/0/uc?id=1Qju_FmGQwoOeIZ-Tj8csmniBEG5YqdlN"
 fi
 
@@ -91,7 +94,6 @@ then
   mv $ZIP_FILE $DATA_DIR/$ZIP_FILE
 fi
 
-OLD_DATASET_NAME=curv_contour_length_${INDEX}_full
 if $DEV
 then
   unzip $DATA_DIR/$ZIP_FILE $OLD_DATASET_NAME/train/0.npz
