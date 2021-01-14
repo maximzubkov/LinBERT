@@ -46,7 +46,6 @@ def get_dataset(
         path = join(data_path, name, split, "csv")
         paths = [join(path, file) for file in listdir(path)]
         batch_size = 100
-        max_length = max_length + 2
     else:
         raise ValueError("Unknown Dataset")
 
