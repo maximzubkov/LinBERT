@@ -14,6 +14,7 @@ def configure_bert_training(
         is_test: bool,
         has_pos_attention: bool,
         has_batch_norm: bool,
+        vocab_size: int,
         run_name: str = "default_yelp",
         feature_map: str = "elu",
         pos_bias_type: str = None
@@ -37,7 +38,7 @@ def configure_bert_training(
         )
 
         config = BertConfig(
-            vocab_size=52_000,
+            vocab_size=vocab_size,
             max_position_embeddings=max_seq_len,
             num_attention_heads=2,
             num_hidden_layers=2,
@@ -68,7 +69,7 @@ def configure_bert_training(
         )
 
         config = BertConfig(
-            vocab_size=52_000,
+            vocab_size=vocab_size,
             max_position_embeddings=max_seq_len,
             hidden_size=128,
             num_attention_heads=4,
