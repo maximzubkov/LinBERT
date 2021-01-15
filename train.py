@@ -4,48 +4,54 @@ from os.path import join
 from transformers import BertTokenizerFast
 from transformers import Trainer
 
-from configs import configure_bert_training
+from configs import yelp_config, pf_config, ModelConfig
 from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
 from utils import set_seed_, compute_metrics
-from dataset import get_dataset, dataset_config
+from dataset import get_dataset
 
 data_path = "data"
 
 
 def train(
-        run_name: str,
         dataset_name: str,
         seed: int,
         is_test: bool,
-        max_seq_len: int,
         is_linear: bool,
-        has_batch_norm: bool,
-        has_pos_attention: bool,
-        feature_map: str,
-        pos_bias_type: str = None
+        model_config: ModelConfig,
+        max_seq_len: int = None,
+        x_shape: int = None,
+        y_shape: int = None,
 ):
     set_seed_(seed)
 
+    output_path = join(data_path, dataset_name)
+
     if dataset_name in ["yelp_polarity", "yelp_full"]:
         tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+        vocab_size = 52_000
+        config, training_args = yelp_config(
+            dataset_name=dataset_name,
+            output_path=output_path,
+            seed=seed,
+            is_test=is_test,
+            max_seq_len=max_seq_len,
+            vocab_size=vocab_size,
+            model_config=model_config
+        )
     elif dataset_name in ["pf_6_full", "pf_9_full", "pf_14_full"]:
         vocab_path = join(data_path, dataset_name) + ("_small" if is_test else "")
         tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
-
-    output_path = join(data_path, dataset_name)
-    config, training_args = configure_bert_training(
-        output_path,
-        seed=seed,
-        is_test=is_test,
-        max_seq_len=max_seq_len,
-        run_name=run_name,
-        has_batch_norm=has_batch_norm,
-        has_pos_attention=has_pos_attention,
-        feature_map=feature_map,
-        vocab_size=tokenizer.vocab_size,
-        num_labels=dataset_config[dataset_name]["num_labels"],
-        pos_bias_type=pos_bias_type
-    )
+        vocab_size = tokenizer.vocab_size
+        config, training_args = pf_config(
+            dataset_name=dataset_name,
+            output_path=output_path,
+            seed=seed,
+            is_test=is_test,
+            x_shape=x_shape,
+            y_shape=y_shape,
+            vocab_size=vocab_size,
+            model_config=model_config
+        )
 
     if is_linear:
         model = LinBertForSequenceClassification(config=config)
@@ -89,26 +95,35 @@ if __name__ == "__main__":
     arg_parser.add_argument(
         "--dataset", choices=["pf_6_full", "pf_9_full", "pf_14_full"] + ["yelp_polarity", "yelp_full"]
     )
-    arg_parser.add_argument("--run_name", type=str)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
     arg_parser.add_argument("--resume", type=str, default=None)
-    arg_parser.add_argument("--max_seq_len", type=int, default=1024)
+    arg_parser.add_argument("--max_seq_len", type=int, default=None)
+    arg_parser.add_argument("--x_shape", type=int, default=None)
+    arg_parser.add_argument("--y_shape", type=int, default=None)
+    arg_parser.add_argument("--has_pos_embed_2d", action='store_true')
     arg_parser.add_argument("--is_linear", action='store_true')
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
     arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive"], default=None)
     args = arg_parser.parse_args()
+
+    model_config = ModelConfig(
+        has_batch_norm=args.has_batch_norm,
+        has_pos_attention=args.has_pos_attention,
+        has_pos_embed_2d=args.has_pos_embed_2d,
+        feature_map=args.feature_map,
+        pos_bias_type=args.pos_bias_type,
+    )
+
     train(
-        run_name=args.run_name,
         dataset_name=args.dataset,
         seed=args.seed,
         is_test=args.test,
         max_seq_len=args.max_seq_len,
+        x_shape=args.x_shape,
+        y_shape=args.y_shape,
         is_linear=args.is_linear,
-        has_batch_norm=args.has_batch_norm,
-        has_pos_attention=args.has_pos_attention,
-        feature_map=args.feature_map,
-        pos_bias_type=args.pos_bias_type
+        model_config=model_config
     )

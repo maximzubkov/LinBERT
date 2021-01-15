@@ -7,6 +7,7 @@ from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import PositionalAttention
 from models.modules.positional_attention import PositionalBias
+from models.modules.positional_embedding import Bert2DEmbeddings
 
 
 class PosAttnBertSelfAttention(BertSelfAttention):
@@ -82,6 +83,9 @@ class PosAttnBertModel(BertModel):
         super().__init__(config)
         self.pos_attention = \
             PositionalAttention(self.embeddings.position_embeddings) if config.has_pos_attention else None
+
+        if config.has_pos_embed_2d:
+            self.embeddings = Bert2DEmbeddings(config)
 
         for i, _ in enumerate(self.encoder.layer):
             self.encoder.layer[i].attention.self = PosAttnBertSelfAttention(config, self.pos_attention)
