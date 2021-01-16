@@ -2,18 +2,19 @@ import math
 
 import torch
 import torch.nn as nn
-from transformers import BertForSequenceClassification, BertModel
+from transformers import BertModel
 from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import PositionalAttention
 from models.modules.positional_attention import PositionalBias
+from models.modules.positional_embedding import Bert2DEmbeddings
 
 
 class PosAttnBertSelfAttention(BertSelfAttention):
     def __init__(self, config, pos_attention: nn.Module = None):
         super().__init__(config)
         self.pos_attention = pos_attention
-        self.pos_bias = PositionalBias(config.max_position_embeddings) if config.pos_bias_type is not None else None
+        self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
 
     def forward(
         self,
@@ -57,7 +58,7 @@ class PosAttnBertSelfAttention(BertSelfAttention):
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
         if self.pos_bias is not None:
-            attention_probs = attention_probs + self.pos_bias()
+            attention_probs = attention_probs + self.pos_bias(value_layer)
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
@@ -83,11 +84,8 @@ class PosAttnBertModel(BertModel):
         self.pos_attention = \
             PositionalAttention(self.embeddings.position_embeddings) if config.has_pos_attention else None
 
+        if config.has_pos_embed_2d:
+            self.embeddings = Bert2DEmbeddings(config)
+
         for i, _ in enumerate(self.encoder.layer):
             self.encoder.layer[i].attention.self = PosAttnBertSelfAttention(config, self.pos_attention)
-
-
-class PosAttnBertForSequenceClassification(BertForSequenceClassification):
-    def __init__(self, config):
-        super().__init__(config)
-        self.bert = PosAttnBertModel(config)

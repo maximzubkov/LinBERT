@@ -34,16 +34,22 @@ class PositionalBias(nn.Module):
             return self._naive(v)
         elif self.type_ == "fft":
             return self._fft(v)
+        elif self.type_ == "orig":
+            return self._construnct_bias()
         else:
             raise ValueError("Unknown positional bias type")
 
-    def _naive(self, v):
-        # [batch_size, seq_len, seq_len]
+    def _construnct_bias(self):
         p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
         bias = torch.cat([
             p[self.seq_len - i - 1: 2 * self.seq_len - i - 1].unsqueeze(0)
             for i in range(self.seq_len)
         ], 0)
+        return bias
+
+    def _naive(self, v):
+        # [batch_size, seq_len, seq_len]
+        bias = self._construnct_bias()
         z_pb = bias.sum(-1).view(1, bias.shape[0], 1)
         pbv = torch.einsum("nlhd,lj->njhd", v, bias)
         return pbv, z_pb

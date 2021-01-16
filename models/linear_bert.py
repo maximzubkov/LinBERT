@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
-from transformers import BertModel, BertForSequenceClassification
+from transformers import BertModel
 from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import LinPositionalAttention
 from models.modules.common import transpose_for_scores
 from models.modules.fast_transformers import LinearAttention
+from models.modules.positional_embedding import Bert2DEmbeddings
 
 
 class LinBertSelfAttention(BertSelfAttention):
@@ -75,14 +76,11 @@ class LinBertSelfAttention(BertSelfAttention):
 class LinBertModel(BertModel):
     def __init__(self, config):
         super().__init__(config)
+        if config.has_pos_embed_2d:
+            self.embeddings = Bert2DEmbeddings(config)
+
         self.pos_attention = \
             LinPositionalAttention(config, self.embeddings.position_embeddings) if config.has_pos_attention else None
 
         for i, _ in enumerate(self.encoder.layer):
             self.encoder.layer[i].attention.self = LinBertSelfAttention(config, self.pos_attention)
-
-
-class LinBertForSequenceClassification(BertForSequenceClassification):
-    def __init__(self, config):
-        super().__init__(config)
-        self.bert = LinBertModel(config)
