@@ -5,9 +5,9 @@ from transformers import BertTokenizerFast
 from transformers import Trainer
 
 from configs import yelp_config, pf_config, ModelConfig
-from models import LinBertForSequenceClassification, PosAttnBertForSequenceClassification
-from utils import set_seed_, compute_metrics
 from dataset import get_dataset
+from models import Classifier
+from utils import set_seed_, compute_metrics
 
 data_path = "data"
 
@@ -16,7 +16,6 @@ def train(
         dataset_name: str,
         seed: int,
         is_test: bool,
-        is_linear: bool,
         model_config: ModelConfig,
         max_seq_len: int = None,
         x_shape: int = None,
@@ -53,10 +52,7 @@ def train(
             model_config=model_config
         )
 
-    if is_linear:
-        model = LinBertForSequenceClassification(config=config)
-    else:
-        model = PosAttnBertForSequenceClassification(config=config)
+    model = Classifier(config=config)
 
     _, train_dataset = get_dataset(
         dataset_name,
@@ -110,6 +106,7 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     model_config = ModelConfig(
+        is_linear=args.is_linear,
         has_batch_norm=args.has_batch_norm,
         has_pos_attention=args.has_pos_attention,
         has_pos_embed_2d=args.has_pos_embed_2d,
@@ -124,6 +121,5 @@ if __name__ == "__main__":
         max_seq_len=args.max_seq_len,
         x_shape=args.x_shape,
         y_shape=args.y_shape,
-        is_linear=args.is_linear,
         model_config=model_config
     )

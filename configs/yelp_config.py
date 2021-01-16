@@ -1,6 +1,7 @@
 from typing import Tuple
 
 from transformers import BertConfig, TrainingArguments
+
 from dataset import dataset_config
 from .model_config import ModelConfig
 
