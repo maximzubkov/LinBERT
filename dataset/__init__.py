@@ -2,7 +2,7 @@ from os import listdir
 from os.path import join
 
 from datasets import load_dataset
-from transformers import PreTrainedTokenizerFast
+from transformers import PreTrainedTokenizerFast, BertConfig
 
 data_path = "data"
 
@@ -45,13 +45,11 @@ dataset_config = {
 def get_dataset(
         name: str,
         split: str,
-        max_length: int,
         cache_dir: str,
         seed: int,
         is_test: bool,
+        config: BertConfig,
         tokenizer: PreTrainedTokenizerFast,
-        return_attention_mask: bool = False,
-        return_token_type_ids: bool = False,
 ):
     if name in ["yelp_full", "yelp_polarity"]:
         split = f"{split}_small" if is_test else split
@@ -68,13 +66,13 @@ def get_dataset(
     return _hf_dataset(
         name=name,
         paths=paths,
-        max_length=max_length,
         cache_dir=cache_dir,
         seed=seed,
         tokenizer=tokenizer,
         batch_size=batch_size,
-        return_attention_mask=return_attention_mask,
-        return_token_type_ids=return_token_type_ids,
+        return_attention_mask=config.return_attention_mask,
+        return_token_type_ids=config.return_token_type_ids,
+        max_length=config.max_position_embeddings,
     )
 
 

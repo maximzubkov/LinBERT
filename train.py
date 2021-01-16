@@ -57,21 +57,21 @@ def train(
     _, train_dataset = get_dataset(
         dataset_name,
         split="train",
-        max_length=config.max_position_embeddings,
-        tokenizer=tokenizer,
         is_test=is_test,
         seed=seed,
-        cache_dir=data_path
+        cache_dir=data_path,
+        config=config,
+        tokenizer=tokenizer,
     )
 
     _, eval_dataset = get_dataset(
         dataset_name,
         split="test",
-        max_length=config.max_position_embeddings,
-        tokenizer=tokenizer,
         is_test=is_test,
         seed=seed,
-        cache_dir=data_path
+        cache_dir=data_path,
+        config=config,
+        tokenizer=tokenizer,
     )
 
     trainer = Trainer(
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
-    arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive"], default=None)
+    arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "orig"], default=None)
     args = arg_parser.parse_args()
 
     model_config = ModelConfig(

@@ -43,6 +43,8 @@ def pf_config(
             num_labels=dataset_config[dataset_name]["num_labels"],
             x_shape=x_shape,
             y_shape=y_shape,
+            return_attention_mask=True,
+            return_token_type_ids=False,
             **model_config.__dict__
         )
     else:
@@ -72,6 +74,8 @@ def pf_config(
             num_labels=dataset_config[dataset_name]["num_labels"],
             x_shape=x_shape,
             y_shape=y_shape,
+            return_attention_mask=True,
+            return_token_type_ids=False,
             **model_config.__dict__
         )
 

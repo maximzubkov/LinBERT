@@ -42,6 +42,8 @@ def yelp_config(
             hidden_size=12,
             type_vocab_size=1,
             num_labels=dataset_config[dataset_name]["num_labels"],
+            return_attention_mask=True,
+            return_token_type_ids=False,
             **model_config.__dict__
         )
     else:
@@ -70,6 +72,8 @@ def yelp_config(
             num_hidden_layers=2,
             type_vocab_size=1,
             num_labels=dataset_config[dataset_name]["num_labels"],
+            return_attention_mask=True,
+            return_token_type_ids=False,
             **model_config.__dict__
         )
 
