@@ -117,5 +117,5 @@ def _hf_dataset(
         columns.append("token_type_ids")
 
     dataset.set_format(type="torch", columns=columns)
-    dataset.shuffle(seed=seed)
+    dataset = dataset.shuffle(seed=seed)
     return label2idx, dataset
