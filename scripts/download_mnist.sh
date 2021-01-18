@@ -36,12 +36,12 @@ gunzip -c "$DATA_DIR/train-labels-idx1-ubyte" > $DATA_DIR/mnist/train_labels
 gunzip -c "$DATA_DIR/t10k-images-idx3-ubyte" > $DATA_DIR/mnist/test_images
 gunzip -c "$DATA_DIR/t10k-labels-idx1-ubyte" > $DATA_DIR/mnist/test_labels
 
-python scripts/preprocess_mnist.py --dataset="${DATA_DIR}/mnist"
-
 if [ ! -d "$DATA_DIR/mnist_small" ]
 then
   mkdir $DATA_DIR/mnist_small
 fi
+
+python scripts/preprocess_mnist.py --dataset="${DATA_DIR}/mnist"
 
 head -300 $DATA_DIR/mnist/test.csv > $DATA_DIR/mnist_small/test.csv
 head -1000 $DATA_DIR/mnist/train.csv > $DATA_DIR/mnist_small/train.csv

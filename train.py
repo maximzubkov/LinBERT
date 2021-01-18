@@ -37,10 +37,13 @@ def train(
             vocab_size=vocab_size,
             model_config=model_config
         )
-    elif dataset_name in ["pf_6_full", "pf_9_full", "pf_14_full"]:
+    elif dataset_name in ["pf_6_full", "pf_9_full", "pf_14_full", "mnist"]:
         vocab_path = join(data_path, dataset_name) + ("_small" if is_test else "")
         tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
         vocab_size = tokenizer.vocab_size
+        if dataset_name == "mnist":
+            x_shape = 28
+            y_shape = 28
         config, training_args = pf_config(
             dataset_name=dataset_name,
             output_path=output_path,
@@ -51,7 +54,6 @@ def train(
             vocab_size=vocab_size,
             model_config=model_config
         )
-
     model = Classifier(config=config)
 
     _, train_dataset = get_dataset(
@@ -89,7 +91,7 @@ def train(
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument(
-        "--dataset", choices=["pf_6_full", "pf_9_full", "pf_14_full"] + ["yelp_polarity", "yelp_full"]
+        "--dataset", choices=["pf_6_full", "pf_9_full", "pf_14_full"] + ["yelp_polarity", "yelp_full"] + ["mnist"]
     )
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)
