@@ -57,7 +57,7 @@ if __name__ == "__main__":
         imgs_path=join(dataset_path, "test_images"),
         labels_path=join(dataset_path, "test_labels"),
         output_path=join(dataset_path, "test.csv"),
-        rotate=args.rotate,
+        rotate=False,
         n=10000
     )
 
