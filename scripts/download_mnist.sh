@@ -1,5 +1,25 @@
 #!/bin/bash
 
+ROTATE=false
+
+while (( "$#" )); do
+  case "$1" in
+    -h|--help)
+      echo "options:"
+      echo "-h, --help                     show brief help"
+      echo "--augmentation                 pass it if rotation should be used, default false"
+      exit 0
+      ;;
+    --rotate*)
+      ROTATE=true
+      shift
+      ;;
+    *)
+      echo "something went wrong"
+      exit 1
+  esac
+done
+
 DATA_DIR=./data
 if [ ! -d $DATA_DIR ]
 then
@@ -41,7 +61,12 @@ then
   mkdir $DATA_DIR/mnist_small
 fi
 
-python scripts/preprocess_mnist.py --dataset="${DATA_DIR}/mnist"
+if $ROTATE
+then
+  python scripts/preprocess_mnist.py --dataset="${DATA_DIR}/mnist" --rotate
+else
+  python scripts/preprocess_mnist.py --dataset="${DATA_DIR}/mnist"
+fi
 
 head -300 $DATA_DIR/mnist/test.csv > $DATA_DIR/mnist_small/test.csv
 head -1000 $DATA_DIR/mnist/train.csv > $DATA_DIR/mnist_small/train.csv
