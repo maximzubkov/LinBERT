@@ -130,8 +130,4 @@ def _hf_dataset(
 
     dataset.set_format(type="torch", columns=columns)
     dataset = dataset.shuffle(seed=seed)
-    print(dataset[0])
-    print(dataset[1])
-    print(dataset[2])
-    print(dataset[3])
     return label2idx, dataset
