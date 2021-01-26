@@ -38,6 +38,14 @@ dataset_config = {
     "pf_9_full_small": {
         "num_labels": 2,
         "labels": [0, 1],
+    },
+    "mnist": {
+        "num_labels": 10,
+        "labels": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    },
+    "mnist_small": {
+        "num_labels": 10,
+        "labels": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     }
 }
 
@@ -59,6 +67,10 @@ def get_dataset(
         name = f"{name}_small" if is_test else name
         path = join(data_path, name, split, "csv")
         paths = [join(path, file) for file in listdir(path)]
+        batch_size = 100
+    elif name in ["mnist"]:
+        name = f"{name}_small" if is_test else name
+        paths = [join(data_path, name, f"{split}.csv")]
         batch_size = 100
     else:
         raise ValueError("Unknown Dataset")

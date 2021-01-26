@@ -11,15 +11,8 @@ from tqdm import tqdm
 data_path = "data"
 
 
-def create_vocab(dataset_path: str):
-    with open(join(dataset_path, "vocab.txt"), "w") as f:
-        tokens = [str(i) for i in range(256)] + ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
-        f.write("\n".join(tokens))
-
-
-def preprocess(dataset: str, shape: tuple = (100, 100)):
+def preprocess_pf(dataset: str, shape: tuple = (100, 100)):
     dataset_path = join(data_path, dataset)
-    create_vocab(dataset_path)
     for split_ in ["train", "test"]:
         path = join(dataset_path, split_)
         csv_path = join(path, "csv")
@@ -47,4 +40,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--x_shape", type=int)
     arg_parser.add_argument("--y_shape", type=int)
     args = arg_parser.parse_args()
-    preprocess(dataset=args.dataset, shape=(args.x_shape, args.y_shape))
+    preprocess_pf(dataset=args.dataset, shape=(args.x_shape, args.y_shape))
+    with open(join(data_path, args.dataset, "vocab.txt"), "w") as f:
+        tokens = [str(i) for i in range(256)] + ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
+        f.write("\n".join(tokens))
