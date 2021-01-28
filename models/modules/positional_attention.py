@@ -22,7 +22,11 @@ class PositionalBias(nn.Module):
         super(PositionalBias, self).__init__()
         self.type_ = config.pos_bias_type
         self.seq_len = config.max_position_embeddings
-        self.w = torch.nn.Parameter(torch.randn(self.seq_len), requires_grad=True)
+        if self.type_ in ["fft_2d", "naive_2d"]:
+            self.n = int(self.seq_len ** 0.5)
+            self.w = torch.nn.Parameter(torch.randn(self.n), requires_grad=True)
+        else:
+            self.w = torch.nn.Parameter(torch.randn(self.seq_len), requires_grad=True)
         self.w.data.uniform_(-0.1, 0.1)
         if self.type_ == "fft":
             self.o_ = torch.ones(config.num_attention_heads, self.seq_len)
@@ -32,8 +36,12 @@ class PositionalBias(nn.Module):
     def forward(self, v):
         if self.type_ == "naive":
             return self._naive(v)
+        elif self.type_ == "naive_2d":
+            return self._naive_2d(v)
         elif self.type_ == "fft":
             return self._fft(v)
+        elif self.type_ == "fft_2d":
+            return self._fft_2d(v)
         elif self.type_ == "orig":
             return self._construnct_bias()
         else:
@@ -41,9 +49,10 @@ class PositionalBias(nn.Module):
 
     def _construnct_bias(self):
         p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
+        shape = self.w.shape[0]
         bias = torch.cat([
-            p[self.seq_len - i - 1: 2 * self.seq_len - i - 1].unsqueeze(0)
-            for i in range(self.seq_len)
+            p[shape - i - 1: 2 * shape - i - 1].unsqueeze(0)
+            for i in range(shape)
         ], 0)
         return bias
 
@@ -52,6 +61,18 @@ class PositionalBias(nn.Module):
         bias = self._construnct_bias()
         z_pb = bias.sum(-1).view(1, bias.shape[0], 1)
         pbv = torch.einsum("nlhd,lj->njhd", v, bias)
+        return pbv, z_pb
+
+    def _naive_2d(self, v):
+        # [batch_size, seq_len, seq_len]
+        bias = self._construnct_bias()
+        x_ = bias.unsqueeze(0).unsqueeze(2)
+        y_ = bias.unsqueeze(1).unsqueeze(3)
+        w_ = x_ + y_
+        w_ = w_.reshape(self.n, self.n, -1)
+        w_ = w_.reshape(-1, self.n ** 2)
+        z_pb = w_.sum(-1).view(1, w_.shape[0], 1)
+        pbv = torch.einsum("nlhd,lj->njhd", v, w_)
         return pbv, z_pb
 
     @staticmethod
