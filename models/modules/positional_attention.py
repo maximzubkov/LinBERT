@@ -25,7 +25,7 @@ class PositionalBias(nn.Module):
         if self.type_ in ["fft_2d", "naive_2d"]:
             self.n = int(self.seq_len ** 0.5)
             self.w = torch.nn.Parameter(
-                torch.sort(torch.randn(self.n), descending=True)[0],
+                torch.sort(torch.randn(self.n))[0],
                 requires_grad=True
             )
         else:
