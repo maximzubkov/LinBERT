@@ -24,9 +24,15 @@ class PositionalBias(nn.Module):
         self.seq_len = config.max_position_embeddings
         if self.type_ in ["fft_2d", "naive_2d"]:
             self.n = int(self.seq_len ** 0.5)
-            self.w = torch.nn.Parameter(torch.randn(self.n), requires_grad=True)
+            self.w = torch.nn.Parameter(
+                torch.sort(torch.randn(self.n), descending=True)[0],
+                requires_grad=True
+            )
         else:
-            self.w = torch.nn.Parameter(torch.randn(self.seq_len), requires_grad=True)
+            self.w = torch.nn.Parameter(
+                torch.sort(torch.randn(self.seq_len), descending=True)[0],
+                requires_grad=True
+            )
         self.w.data.uniform_(-0.1, 0.1)
         if self.type_ == "fft":
             self.o_ = torch.ones(config.num_attention_heads, self.seq_len)

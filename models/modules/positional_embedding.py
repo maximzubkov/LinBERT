@@ -8,8 +8,9 @@ class Bert2DEmbeddings(BertEmbeddings):
         super().__init__(config)
         self.x_shape = config.x_shape
         self.y_shape = config.y_shape
-        self.position_x_embeddings = nn.Embedding(self.x_shape, config.hidden_size)
-        self.position_y_embeddings = nn.Embedding(self.y_shape, config.hidden_size)
+
+        self.position_x_embeddings = nn.Embedding(self.x_shape, config.hidden_size // 2)
+        self.position_y_embeddings = nn.Embedding(self.y_shape, config.hidden_size // 2)
         # position_ids (1, len position emb) is contiguous in memory and exported when serialized
         self.register_buffer("position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)))
         self.position_embedding_type = getattr(config, "position_embedding_type", "absolute")
@@ -38,7 +39,7 @@ class Bert2DEmbeddings(BertEmbeddings):
         if self.position_embedding_type == "absolute":
             position_x_embeddings = self.position_x_embeddings(position_ids % self.x_shape)
             position_y_embeddings = self.position_y_embeddings(position_ids // self.y_shape)
-            embeddings += position_x_embeddings + position_y_embeddings
+            embeddings += torch.cat([position_x_embeddings, position_y_embeddings], dim=-1)
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
         return embeddings
