@@ -53,7 +53,7 @@ class PositionalBias(nn.Module):
         else:
             raise ValueError("Unknown positional bias type")
 
-    def _construnct_bias(self):
+    def _construct_bias(self):
         p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
         shape = self.w.shape[0]
         bias = torch.cat([
@@ -62,7 +62,7 @@ class PositionalBias(nn.Module):
         ], 0)
         return bias
 
-    def _construnct_bias_2d(self):
+    def _construct_bias_2d(self):
         p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
         shape = self.w.shape[0]
         bias = torch.cat([p[i: shape + i].unsqueeze(0) for i in range(shape)], 0)
@@ -70,14 +70,14 @@ class PositionalBias(nn.Module):
 
     def _naive(self, v):
         # [batch_size, seq_len, seq_len]
-        bias = self._construnct_bias()
+        bias = self._construct_bias()
         z_pb = bias.sum(-1).view(1, bias.shape[0], 1)
         pbv = torch.einsum("nlhd,lj->njhd", v, bias)
         return pbv, z_pb
 
     def _naive_2d(self, v):
         # [batch_size, seq_len, seq_len]
-        bias = self._construnct_bias_2d()
+        bias = self._construct_bias_2d()
         x_ = bias.unsqueeze(0).unsqueeze(2)
         y_ = bias.unsqueeze(1).unsqueeze(3)
         w_ = x_ + y_
