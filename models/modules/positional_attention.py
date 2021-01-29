@@ -25,12 +25,12 @@ class PositionalBias(nn.Module):
         if self.type_ in ["fft_2d", "naive_2d"]:
             self.n = int(self.seq_len ** 0.5)
             self.w = torch.nn.Parameter(
-                torch.sort(torch.randn(self.n))[0],
+                torch.sort(torch.randn(self.n), descending=True)[0],
                 requires_grad=True
             )
         else:
             self.w = torch.nn.Parameter(
-                torch.sort(torch.randn(self.seq_len), descending=True)[0],
+                torch.sort(torch.randn(self.seq_len))[0],
                 requires_grad=True
             )
         self.w.data.uniform_(-0.1, 0.1)
@@ -62,6 +62,12 @@ class PositionalBias(nn.Module):
         ], 0)
         return bias
 
+    def _construnct_bias_2d(self):
+        p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
+        shape = self.w.shape[0]
+        bias = torch.cat([p[i: shape + i].unsqueeze(0) for i in range(shape)], 0)
+        return bias
+
     def _naive(self, v):
         # [batch_size, seq_len, seq_len]
         bias = self._construnct_bias()
@@ -71,7 +77,7 @@ class PositionalBias(nn.Module):
 
     def _naive_2d(self, v):
         # [batch_size, seq_len, seq_len]
-        bias = self._construnct_bias()
+        bias = self._construnct_bias_2d()
         x_ = bias.unsqueeze(0).unsqueeze(2)
         y_ = bias.unsqueeze(1).unsqueeze(3)
         w_ = x_ + y_
