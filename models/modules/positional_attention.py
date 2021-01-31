@@ -36,7 +36,6 @@ class PositionalBias(nn.Module):
                 torch.sort(torch.randn(self.seq_len))[0],
                 requires_grad=True
             )
-        self.w.data.uniform_(-0.1, 0.1)
         if self.type_ == "fft":
             self.o_ = torch.ones(config.num_attention_heads, self.seq_len)
             self.o_ = nn.functional.pad(self.o_, [self.seq_len - 1, 0])
@@ -65,12 +64,6 @@ class PositionalBias(nn.Module):
         ], 0)
         return bias
 
-    def _construct_bias_2d(self):
-        p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
-        shape = self.w.shape[0]
-        bias = torch.cat([p[i: shape + i].unsqueeze(0) for i in range(shape)], 0)
-        return bias
-
     def _naive(self, v):
         # [batch_size, seq_len, seq_len]
         bias = self._construct_bias()
@@ -80,13 +73,14 @@ class PositionalBias(nn.Module):
 
     def _naive_2d(self, v):
         # [batch_size, seq_len, seq_len]
-        bias = self._construct_bias_2d()
+        bias = self._construct_bias()
         x_ = bias.unsqueeze(0).unsqueeze(2)
         y_ = bias.unsqueeze(1).unsqueeze(3)
         w_ = x_ + y_
         w_ = w_.reshape(self.n, self.n, -1)
         w_ = w_.reshape(-1, self.n ** 2)
-        w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
+        w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=-1e6)
+        w_ = elu_feature_map(w_)
         z_pb = w_.sum(-1).view(1, w_.shape[0], 1)
         pbv = torch.einsum("nlhd,lj->njhd", v, w_)
         return pbv, z_pb
