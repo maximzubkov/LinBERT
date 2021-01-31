@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .common import elu_feature_map, transpose_for_scores
 
@@ -23,12 +24,14 @@ class PositionalBias(nn.Module):
         self.type_ = config.pos_bias_type
         self.seq_len = config.max_position_embeddings
         if self.type_ in ["fft_2d", "naive_2d"]:
+            self.seq_len = config.max_position_embeddings - 2
             self.n = int(self.seq_len ** 0.5)
             self.w = torch.nn.Parameter(
                 torch.sort(torch.randn(self.n), descending=True)[0],
                 requires_grad=True
             )
         else:
+            self.seq_len = config.max_position_embeddings
             self.w = torch.nn.Parameter(
                 torch.sort(torch.randn(self.seq_len))[0],
                 requires_grad=True
@@ -83,6 +86,7 @@ class PositionalBias(nn.Module):
         w_ = x_ + y_
         w_ = w_.reshape(self.n, self.n, -1)
         w_ = w_.reshape(-1, self.n ** 2)
+        w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
         z_pb = w_.sum(-1).view(1, w_.shape[0], 1)
         pbv = torch.einsum("nlhd,lj->njhd", v, w_)
         return pbv, z_pb
