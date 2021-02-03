@@ -49,6 +49,5 @@ def test_pos_bias():
     ppb_fft, z_pb_fft = fft_pos_bias(v)
 
     ppb_orig, z_pb_orig = naive_pos_bias(v)
-    print(ppb_orig - ppb_fft)
     assert torch.allclose(z_pb_orig, z_pb_fft, atol=1e-4), "Z not equal"
     assert torch.allclose(ppb_orig, ppb_fft, atol=1e-4), "PPB not equal"
