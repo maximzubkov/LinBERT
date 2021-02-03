@@ -23,11 +23,12 @@ class PositionalBias(nn.Module):
         super(PositionalBias, self).__init__()
         self.type_ = config.pos_bias_type
         self.seq_len = config.max_position_embeddings
+        self.num_heads = config.num_attention_heads
         if self.type_ in ["fft_2d", "naive_2d"]:
             self.seq_len = config.max_position_embeddings - 2
             self.n = int(self.seq_len ** 0.5)
             self.w = torch.nn.Parameter(
-                torch.sort(torch.randn(self.n), descending=True)[0],
+                torch.sort(torch.randn(self.num_heads, self.n), descending=True, dim=-1)[0],
                 requires_grad=True
             )
         else:
@@ -71,18 +72,26 @@ class PositionalBias(nn.Module):
         pbv = torch.einsum("nlhd,lj->njhd", v, bias)
         return pbv, z_pb
 
+    def _construct_2d_bias(self):
+        p = torch.cat([torch.flip(self.w[:, 1:], dims=[1]), self.w], dim=1)
+        shape = self.w.shape[1]
+        bias = torch.cat([
+            p[:, shape - i - 1: 2 * shape - i - 1].unsqueeze(-1)
+            for i in range(shape)
+        ], -1)
+        return bias
+
     def _naive_2d(self, v):
         # [batch_size, seq_len, seq_len]
-        bias = self._construct_bias()
-        x_ = bias.unsqueeze(0).unsqueeze(2)
-        y_ = bias.unsqueeze(1).unsqueeze(3)
+        bias = self._construct_2d_bias()
+        x_ = bias.unsqueeze(1).unsqueeze(3)
+        y_ = bias.unsqueeze(2).unsqueeze(-1)
         w_ = x_ + y_
-        w_ = w_.reshape(self.n, self.n, -1)
-        w_ = w_.reshape(-1, self.n ** 2)
-        w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=-1e6)
-        w_ = elu_feature_map(w_)
-        z_pb = w_.sum(-1).view(1, w_.shape[0], 1)
-        pbv = torch.einsum("nlhd,lj->njhd", v, w_)
+        w_ = w_.reshape(self.num_heads, self.n, self.n, -1)
+        w_ = w_.reshape(self.num_heads, -1, self.n ** 2)
+        w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
+        z_pb = w_.sum(-1).transpose(1, 0).unsqueeze(0)
+        pbv = torch.einsum("nlhd,hlj->njhd", v, w_)
         return pbv, z_pb
 
     @staticmethod
