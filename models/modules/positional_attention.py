@@ -121,6 +121,7 @@ class PositionalBias(nn.Module):
 
         return pbv, z_pb
 
+
 class LinPositionalAttention(nn.Module):
     def __init__(self, config,
                  pos_embedding_layer: nn.Embedding,
