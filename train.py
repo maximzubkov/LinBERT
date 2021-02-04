@@ -11,6 +11,9 @@ from utils import set_seed_, compute_metrics
 
 data_path = "data"
 
+img_datasets = ["pf_6_full", "pf_9_full", "pf_14_full", "mnist"]
+text_datasets = ["yelp_polarity", "yelp_full"]
+
 
 def train(
         dataset_name: str,
@@ -25,7 +28,7 @@ def train(
 
     output_path = join(data_path, dataset_name)
 
-    if dataset_name in ["yelp_polarity", "yelp_full"]:
+    if dataset_name in text_datasets:
         tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
         vocab_size = 52_000
         config, training_args = yelp_config(
@@ -37,13 +40,10 @@ def train(
             vocab_size=vocab_size,
             model_config=model_config
         )
-    elif dataset_name in ["pf_6_full", "pf_9_full", "pf_14_full", "mnist"]:
+    elif dataset_name in img_datasets:
         vocab_path = join(data_path, dataset_name) + ("_small" if is_test else "")
         tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
         vocab_size = tokenizer.vocab_size
-        if dataset_name == "mnist":
-            x_shape = 28
-            y_shape = 28
         config, training_args = pf_config(
             dataset_name=dataset_name,
             output_path=output_path,
@@ -54,6 +54,9 @@ def train(
             vocab_size=vocab_size,
             model_config=model_config
         )
+    else:
+        raise ValueError("Unknown dataset")
+
     model = Classifier(config=config)
 
     _, train_dataset = get_dataset(
