@@ -3,16 +3,16 @@ from transformers import BertConfig
 
 from models.modules import PositionalBias
 
-seq_len = 4
-num_heads = 2
-batch_size = 4
-embed_dim = 2
+seq_len = 28 * 28 + 2
+num_heads = 10
+batch_size = 16
+embed_dim = 128
 v = torch.rand(batch_size, seq_len, num_heads, embed_dim)
 
 config1 = BertConfig(
     vocab_size=15,
     max_position_embeddings=seq_len,
-    hidden_size=4,
+    hidden_size=128,
     num_attention_heads=num_heads,
     num_hidden_layers=2,
     type_vocab_size=1,
@@ -25,7 +25,7 @@ config1 = BertConfig(
 config2 = BertConfig(
     vocab_size=15,
     max_position_embeddings=seq_len,
-    hidden_size=4,
+    hidden_size=128,
     num_attention_heads=num_heads,
     num_hidden_layers=2,
     type_vocab_size=1,
@@ -49,8 +49,8 @@ def _test(naive_config: BertConfig, fft_config: BertConfig):
     ppb_fft, z_pb_fft = fft_pos_bias(v)
 
     ppb_orig, z_pb_orig = naive_pos_bias(v)
-    assert torch.allclose(z_pb_orig, z_pb_fft, atol=1e-4), "Z not equal"
-    assert torch.allclose(ppb_orig, ppb_fft, atol=1e-4), "PPB not equal"
+    assert torch.allclose(z_pb_orig, z_pb_fft, atol=1e-3), "Z not equal"
+    assert torch.allclose(ppb_orig, ppb_fft, atol=1e-3), "PPB not equal"
 
 
 def test_pos_bias():
