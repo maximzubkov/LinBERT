@@ -104,7 +104,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
     arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
-    arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "orig"], default=None)
+    arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "orig", "fft_2d", "naive_2d"], default=None)
     args = arg_parser.parse_args()
 
     model_config = ModelConfig(

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .common import elu_feature_map, transpose_for_scores
 
@@ -22,36 +23,66 @@ class PositionalBias(nn.Module):
         super(PositionalBias, self).__init__()
         self.type_ = config.pos_bias_type
         self.seq_len = config.max_position_embeddings
-        self.w = torch.nn.Parameter(torch.randn(self.seq_len), requires_grad=True)
-        self.w.data.uniform_(-0.1, 0.1)
+        self.num_heads = config.num_attention_heads
+        if self.type_ in ["fft_2d", "naive_2d"]:
+            self.seq_len = config.max_position_embeddings - 2
+            self.n = int(self.seq_len ** 0.5)
+            self.w = torch.nn.Parameter(
+                torch.sort(torch.randn(self.num_heads, self.n), descending=True, dim=-1)[0],
+                requires_grad=True
+            )
+        else:
+            self.seq_len = config.max_position_embeddings
+            self.w = torch.nn.Parameter(
+                torch.sort(torch.randn(self.num_heads, self.seq_len), dim=-1)[0],
+                requires_grad=True
+            )
         if self.type_ == "fft":
-            self.o_ = torch.ones(config.num_attention_heads, self.seq_len)
+            self.o_ = torch.ones(self.seq_len)
             self.o_ = nn.functional.pad(self.o_, [self.seq_len - 1, 0])
-            self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 2), requires_grad=False)
+            self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 1), requires_grad=False)
 
     def forward(self, v):
         if self.type_ == "naive":
             return self._naive(v)
+        elif self.type_ == "naive_2d":
+            return self._naive_2d(v)
         elif self.type_ == "fft":
             return self._fft(v)
+        elif self.type_ == "fft_2d":
+            return self._fft_2d(v)
         elif self.type_ == "orig":
             return self._construnct_bias()
         else:
             raise ValueError("Unknown positional bias type")
 
-    def _construnct_bias(self):
-        p = torch.cat([torch.flip(self.w[1:], dims=[0]), self.w], dim=0)
+    def _construct_bias(self):
+        p = torch.cat([torch.flip(self.w[:, 1:], dims=[1]), self.w], dim=1)
+        shape = self.w.shape[1]
         bias = torch.cat([
-            p[self.seq_len - i - 1: 2 * self.seq_len - i - 1].unsqueeze(0)
-            for i in range(self.seq_len)
-        ], 0)
+            p[:, shape - i - 1: 2 * shape - i - 1].unsqueeze(-1)
+            for i in range(shape)
+        ], -1)
         return bias
 
     def _naive(self, v):
         # [batch_size, seq_len, seq_len]
-        bias = self._construnct_bias()
-        z_pb = bias.sum(-1).view(1, bias.shape[0], 1)
-        pbv = torch.einsum("nlhd,lj->njhd", v, bias)
+        bias = self._construct_bias()
+        z_pb = bias.sum(-1).transpose(1, 0).unsqueeze(0)
+        pbv = torch.einsum("nlhd,hlj->njhd", v, bias)
+        return pbv, z_pb
+
+    def _naive_2d(self, v):
+        # [batch_size, seq_len, seq_len]
+        bias = self._construct_bias()
+        x_ = bias.unsqueeze(1).unsqueeze(3)
+        y_ = bias.unsqueeze(2).unsqueeze(-1)
+        w_ = x_ + y_
+        w_ = w_.reshape(self.num_heads, self.n, self.n, -1)
+        w_ = w_.reshape(self.num_heads, -1, self.n ** 2)
+        w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
+        z_pb = w_.sum(-1).transpose(1, 0).unsqueeze(0)
+        pbv = torch.einsum("nlhd,hlj->njhd", v, w_)
         return pbv, z_pb
 
     @staticmethod
@@ -65,24 +96,26 @@ class PositionalBias(nn.Module):
     def _fft(self, v):
         # [batch_size, seq_len, seq_len]
         z = torch.cat([
-            self.w[-1].unsqueeze(0),  # w_{N-1}
-            torch.flip(self.w[1:], dims=[0]),  # w_{N-1}, w_{N-2}, ..., w_{1}
-            self.w[:-1]  # w_{0}, w_{1}, ..., w_{N-2}
-        ], dim=0)
-
+            self.w[:, -1].reshape(-1, 1),  # w_{N-1}
+            torch.flip(self.w[:, 1:], dims=[1]),  # w_{N-1}, w_{N-2}, ..., w_{1}
+            self.w[:, :-1]  # w_{0}, w_{1}, ..., w_{N-2}
+        ], dim=1)
+        # z_fft has shape [num_heads, seq_len * 2 - 1, 2]
         z_fft = torch.rfft(z, 1)
         batch_size, seq_len, n_heads, emb_dim = v.shape
 
-        v_ = v.permute(0, 2, 3, 1).reshape(batch_size * n_heads * emb_dim, seq_len)
+        v_ = v.permute(0, 3, 2, 1).reshape(batch_size * emb_dim, n_heads, seq_len)
 
+        # Since z has shape [num_heads, seq_len * 2 - 1] we need to pad
+        # values with zeros
         v_ = nn.functional.pad(v_, [seq_len - 1, 0])
-        v_fft = torch.rfft(v_, 2)
+        v_fft = torch.rfft(v_, 1)
 
-        pbv = torch.irfft(self._complex_mul(v_fft, z_fft), 2, signal_sizes=v_.shape)
-        pbv = pbv[:, :seq_len]
-        pbv = pbv.reshape(batch_size, n_heads, emb_dim, seq_len).permute(0, 3, 1, 2)
+        pbv = torch.irfft(self._complex_mul(v_fft, z_fft), 1)
+        pbv = pbv[:, :, :seq_len]
+        pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len).permute(0, 3, 2, 1)
 
-        z_pb = torch.irfft(self._complex_mul(z_fft, self.o_fft), 2, signal_sizes=self.o_.shape)
+        z_pb = torch.irfft(self._complex_mul(z_fft, self.o_fft), 1)
         z_pb = z_pb[:, :seq_len]
         z_pb = z_pb.transpose(1, 0).unsqueeze(0)
 

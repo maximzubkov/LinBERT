@@ -35,7 +35,7 @@ def pf_config(
 
         config = BertConfig(
             vocab_size=vocab_size,
-            max_position_embeddings=x_shape * y_shape,
+            max_position_embeddings=x_shape * y_shape + 2,
             num_attention_heads=2,
             num_hidden_layers=2,
             hidden_size=12,
@@ -66,7 +66,7 @@ def pf_config(
 
         config = BertConfig(
             vocab_size=vocab_size,
-            max_position_embeddings=x_shape * y_shape,
+            max_position_embeddings=x_shape * y_shape + 2,
             hidden_size=128,
             num_attention_heads=8,
             num_hidden_layers=4,
