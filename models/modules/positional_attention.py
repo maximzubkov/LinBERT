@@ -37,9 +37,13 @@ class PositionalBias(nn.Module):
                 torch.sort(torch.randn(self.num_heads, self.seq_len), dim=-1)[0],
                 requires_grad=True
             )
-        if self.type_ == "fft":
+        if self.type_ in ["fft"]:
             self.o_ = torch.ones(self.seq_len)
             self.o_ = nn.functional.pad(self.o_, [self.seq_len - 1, 0])
+            self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 1), requires_grad=False)
+        if self.type_ == "fft_2d":
+            self.o_ = torch.ones(self.n, self.n)
+            self.o_ = nn.functional.pad(self.o_, [self.n - 1, 0]).unsqueeze(1)
             self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 1), requires_grad=False)
 
     def forward(self, v):
@@ -117,6 +121,55 @@ class PositionalBias(nn.Module):
 
         z_pb = torch.irfft(self._complex_mul(z_fft, self.o_fft), 1)
         z_pb = z_pb[:, :seq_len]
+        z_pb = z_pb.transpose(1, 0).unsqueeze(0)
+
+        return pbv, z_pb
+
+    def _fft_2d(self, v):
+        # [batch_size, seq_len, seq_len]
+        z = torch.cat([
+            self.w[:, -1].reshape(-1, 1),  # w_{N-1}
+            torch.flip(self.w[:, 1:], dims=[1]),  # w_{N-1}, w_{N-2}, ..., w_{1}
+            self.w[:, :-1]  # w_{0}, w_{1}, ..., w_{N-2}
+        ], dim=1)
+        # z_fft has shape [num_heads, seq_len * 2 - 1, 2]
+        z_fft = torch.rfft(z, 1)
+
+        v_ = v[:, 1:-1, :, :]
+        batch_size, seq_len, n_heads, emb_dim = v_.shape
+        shape = self.w.shape[1]
+
+        v_ = v_.reshape(batch_size, shape, shape, n_heads, emb_dim)
+
+        v_m = v_.permute(0, 4, 1, 3, 2).reshape(-1, shape, n_heads, shape)
+        u_m = v_.permute(0, 4, 2, 3, 1).reshape(-1, shape, n_heads, shape)
+
+        v_m = nn.functional.pad(v_m, [shape - 1, 0])
+        v_m_fft = torch.rfft(v_m, 1)
+
+        u_m = nn.functional.pad(u_m, [shape - 1, 0])
+        u_m_fft = torch.rfft(u_m, 1)
+
+        RxV_m = torch.irfft(self._complex_mul(v_m_fft, z_fft), 1)
+        RxV_m = RxV_m[..., :shape].transpose(-3, -2)
+        RxU_m = torch.irfft(self._complex_mul(u_m_fft, z_fft), 1)
+        RxU_m = RxU_m[..., :shape].transpose(-3, -2)
+
+        x_ = RxV_m.sum(-2).unsqueeze(-2)
+        y_ = RxU_m.sum(-2).unsqueeze(-1)
+
+        pbv = x_ + y_
+        pbv = pbv.reshape(batch_size, emb_dim, n_heads, -1)
+        pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
+        pbv = pbv.permute(0, 3, 2, 1)
+
+        z_pb = torch.irfft(self._complex_mul(self.o_fft, z_fft), 1)
+        z_pb = z_pb[..., :shape].transpose(-3, -2)
+        x_ = z_pb.sum(-2).unsqueeze(-2)
+        y_ = z_pb.sum(-2).unsqueeze(-1)
+
+        z_pb = (x_ + y_).reshape(-1, shape * shape)
+        z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
         z_pb = z_pb.transpose(1, 0).unsqueeze(0)
 
         return pbv, z_pb
