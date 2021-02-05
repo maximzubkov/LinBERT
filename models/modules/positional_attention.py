@@ -42,8 +42,8 @@ class PositionalBias(nn.Module):
             self.o_ = nn.functional.pad(self.o_, [self.seq_len - 1, 0])
             self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 1), requires_grad=False)
         if self.type_ == "fft_2d":
-            self.o_ = torch.ones(self.n, self.n)
-            self.o_ = nn.functional.pad(self.o_, [self.n - 1, 0]).unsqueeze(1)
+            self.o_ = torch.ones(self.n)
+            self.o_ = nn.functional.pad(self.o_, [self.n - 1, 0])
             self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 1), requires_grad=False)
 
     def forward(self, v):
@@ -142,12 +142,11 @@ class PositionalBias(nn.Module):
         v_ = v_.reshape(batch_size, shape, shape, n_heads, emb_dim)
 
         v_m = v_.permute(0, 4, 1, 3, 2).reshape(-1, shape, n_heads, shape)
-        u_m = v_.permute(0, 4, 2, 3, 1).reshape(-1, shape, n_heads, shape)
 
         v_m = nn.functional.pad(v_m, [shape - 1, 0])
         v_m_fft = torch.rfft(v_m, 1)
 
-        u_m = nn.functional.pad(u_m, [shape - 1, 0])
+        u_m = nn.functional.pad(v_m.transpose(-3, -1), [shape - 1, 0])
         u_m_fft = torch.rfft(u_m, 1)
 
         RxV_m = torch.irfft(self._complex_mul(v_m_fft, z_fft), 1)
@@ -164,9 +163,9 @@ class PositionalBias(nn.Module):
         pbv = pbv.permute(0, 3, 2, 1)
 
         z_pb = torch.irfft(self._complex_mul(self.o_fft, z_fft), 1)
-        z_pb = z_pb[..., :shape].transpose(-3, -2)
-        x_ = z_pb.sum(-2).unsqueeze(-2)
-        y_ = z_pb.sum(-2).unsqueeze(-1)
+        z_pb = z_pb[..., :shape] * shape
+        x_ = z_pb.unsqueeze(-2)
+        y_ = z_pb.unsqueeze(-1)
 
         z_pb = (x_ + y_).reshape(-1, shape * shape)
         z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
