@@ -1,4 +1,4 @@
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Union
 
 import torch
 import torch.nn as nn
@@ -8,6 +8,7 @@ from pytorch_lightning import LightningModule
 from torch.optim import Adam
 from transformers import BertConfig
 from vit_pytorch import ViT
+from pytorch_lightning.metrics.functional import confusion_matrix
 
 from configs import TrainingArguments
 from models.modules.fast_transformers import LinearAttention
@@ -90,22 +91,59 @@ class ViTModel(LightningModule):
         imgs, labels = batch
         logits = self(imgs)
         loss = self._calculate_loss(logits, labels)
-        self.logger.log_metrics({"train_loss": loss})
-        return {"loss": loss}
+
+        log: Dict[str, Union[float, torch.Tensor]] = {"train/loss": loss}
+        with torch.no_grad():
+            conf_matrix = confusion_matrix(
+                logits.argmax(-1),
+                labels.squeeze(0),
+                num_classes=self.config.num_labels
+            )
+            log["train/accuracy"] = conf_matrix.trace() / conf_matrix.sum()
+        self.log_dict(log)
+
+        return {"loss": loss, "confusion_matrix": conf_matrix}
 
     def validation_step(self, batch: Any, batch_idx: int) -> Dict:  # type: ignore
         imgs, labels = batch
         logits = self(imgs)
         loss = self._calculate_loss(logits, labels)
-        self.logger.experiment.log({"val_loss": loss})
-        return {"val_loss": loss}
+        with torch.no_grad():
+            conf_matrix = confusion_matrix(
+                logits.argmax(-1),
+                labels.squeeze(0),
+                num_classes=self.config.num_labels
+            )
+
+        return {"loss": loss, "confusion_matrix": conf_matrix}
 
     def test_step(self, batch: Any, batch_idx: int) -> Dict:  # type: ignore
         return self.validation_step(batch, batch_idx)
 
     # ========== On epoch end ==========
 
-    def validation_epoch_end(self, outputs: List[Dict]):
+    def _shared_epoch_end(self, outputs: List[Dict], group: str):
         with torch.no_grad():
-            mean_loss = torch.stack([out["val_loss"] for out in outputs]).mean().item()
-            self.logger.experiment.log({"mean_val_loss": mean_loss})
+            mean_loss = torch.stack([out["loss"] for out in outputs]).mean().item()
+            log: Dict[str, Union[float, torch.Tensor]] = {f"{group}/loss": mean_loss}
+
+            accumulated_conf_matrix = torch.zeros(
+                self.config.num_labels, self.config.num_labels, requires_grad=False, device=self.device
+            )
+            for out in outputs:
+                _conf_matrix = out["confusion_matrix"]
+                max_class_index, _ = _conf_matrix.shape
+                accumulated_conf_matrix[:max_class_index, :max_class_index] += _conf_matrix
+            log[f"{group}/accuracy"] = (accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()).item()
+
+            self.log_dict(log)
+            self.log(f"{group}_loss", mean_loss)
+
+    def training_epoch_end(self, outputs: List[Dict]):
+        self._shared_epoch_end(outputs, "train")
+
+    def validation_epoch_end(self, outputs: List[Dict]):
+        self._shared_epoch_end(outputs, "val")
+
+    def test_epoch_end(self, outputs: List[Dict]):
+        self._shared_epoch_end(outputs, "test")

@@ -29,12 +29,9 @@ def train(
 ):
     set_seed_(seed)
 
-    output_path = join(data_path, dataset_name)
-
     if dataset_name == "mnist":
         config, training_args = vit_config(
             dataset_name=dataset_name,
-            output_path=output_path,
             seed=seed,
             is_test=is_test,
             model_config=model_config
@@ -46,8 +43,9 @@ def train(
     dm = ViTDataModule(dataset_name=dataset_name, training_args=training_args, is_test=is_test)
 
     # define logger
+    project = "vit_test" if is_test else "vit"
     wandb_logger = WandbLogger(
-        project="vit", log_model=True, offline=False
+        project=project, log_model=not is_test, offline=is_test
     )
     # define model checkpoint callback
     checkpoint_callback = ModelCheckpoint(

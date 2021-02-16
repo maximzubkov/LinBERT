@@ -27,8 +27,8 @@ def vit_config(
     if is_test:
         training_args = TrainingArguments(
             num_train_epochs=2,
-            train_batch_size=5,
-            eval_batch_size=5,
+            train_batch_size=100,
+            eval_batch_size=100,
             seed=seed,
             learning_rate=0.003,
             val_every_epoch=1,
@@ -40,9 +40,9 @@ def vit_config(
             patch_size=7,
             max_position_embeddings=17 + 2,
             num_attention_heads=2,
-            intermediate_size=32,
+            intermediate_size=4,
             num_hidden_layers=2,
-            hidden_size=16,
+            hidden_size=4,
             type_vocab_size=1,
             num_labels=dataset_config[dataset_name]["num_labels"],
             channels=1,
