@@ -1,5 +1,4 @@
 from os.path import join
-from typing import Any
 
 import torch
 import torchvision.transforms as transforms
