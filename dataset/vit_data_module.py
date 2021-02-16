@@ -58,9 +58,3 @@ class ViTDataModule(LightningDataModule):
         imgs = torch.stack([item[0] for item in batch])
         labels = torch.LongTensor([item[1] for item in batch])
         return imgs, labels
-
-    def transfer_batch_to_device(self, batch: Any, device: torch.device) -> Any:
-        imgs, labels = batch
-        imgs = imgs.to(device)
-        labels = labels.to(device)
-        return imgs, labels

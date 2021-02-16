@@ -58,14 +58,11 @@ def train(
     # define learning rate logger
     lr_logger = LearningRateMonitor("step")
     gpu = -1 if torch.cuda.is_available() else None
-    distributed_backend = 'ddp' if torch.cuda.is_available() else None
     trainer = Trainer(
         max_epochs=training_args.num_train_epochs,
-        deterministic=True,
         check_val_every_n_epoch=training_args.val_every_epoch,
         logger=wandb_logger,
         gpus=gpu,
-        distributed_backend=distributed_backend,
         progress_bar_refresh_rate=1,
         callbacks=[
             lr_logger,
