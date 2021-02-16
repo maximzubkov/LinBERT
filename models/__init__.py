@@ -2,6 +2,7 @@ from transformers import BertForSequenceClassification
 
 from .linear_bert import LinBertModel  # noqa
 from .pos_attn_bert import PosAttnBertModel  # noqa
+from .vit import ViTModel  # noqa
 
 
 class Classifier(BertForSequenceClassification):
