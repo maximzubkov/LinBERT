@@ -7,7 +7,7 @@ from transformers import Trainer
 from configs import yelp_config, pf_config, ModelConfig
 from dataset import get_dataset
 from models import Classifier
-from utils import set_seed_, compute_metrics
+from utils import set_seed_, compute_metrics, parse_model_config
 
 data_path = "data"
 
@@ -102,22 +102,9 @@ if __name__ == "__main__":
     arg_parser.add_argument("--max_seq_len", type=int, default=None)
     arg_parser.add_argument("--x_shape", type=int, default=None)
     arg_parser.add_argument("--y_shape", type=int, default=None)
-    arg_parser.add_argument("--has_pos_embed_2d", action='store_true')
-    arg_parser.add_argument("--is_linear", action='store_true')
-    arg_parser.add_argument("--has_batch_norm", action='store_true')
-    arg_parser.add_argument("--has_pos_attention", action='store_true')
-    arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
-    arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "orig", "fft_2d", "naive_2d"], default=None)
-    args = arg_parser.parse_args()
 
-    model_config = ModelConfig(
-        is_linear=args.is_linear,
-        has_batch_norm=args.has_batch_norm,
-        has_pos_attention=args.has_pos_attention,
-        has_pos_embed_2d=args.has_pos_embed_2d,
-        feature_map=args.feature_map,
-        pos_bias_type=args.pos_bias_type,
-    )
+    model_config = parse_model_config(arg_parser)
+    args = arg_parser.parse_args()
 
     train(
         dataset_name=args.dataset,
