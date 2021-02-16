@@ -1,9 +1,14 @@
+from typing import Tuple, List, Any, Dict, Union
+
 import torch
 import torch.nn as nn
 from einops import rearrange
+from torch.optim import Optimizer, Adam
+from configs import TrainingArguments
 from transformers import BertConfig
 from vit_pytorch import ViT
 import torch.nn.functional as F
+from pytorch_lightning import LightningModule
 
 from models.modules.fast_transformers import LinearAttention
 
@@ -38,7 +43,7 @@ class ViTLinBertSelfAttention(nn.Module):
         return out
 
 
-class ViTModel(ViT):
+class EfficientViT(ViT):
     def __init__(self, config: BertConfig):
         self.config = config
         super().__init__(
@@ -58,3 +63,49 @@ class ViTModel(ViT):
         for i, _ in enumerate(self.transformer.layers):
             if self.config.is_linear:
                 self.transformer.layers[i][0].fn.fn = ViTLinBertSelfAttention(config)
+
+
+class ViTModel(LightningModule):
+    def __init__(self, config: BertConfig, training_args: TrainingArguments):
+        super().__init__()
+        self.config = config
+        self.training_args = training_args
+        self.save_hyperparameters()
+        self.vit = EfficientViT(config=config)
+
+    def configure_optimizers(self):
+        return Adam(self.vit.parameters(), lr=self.training_args.learning_rate)
+
+    def forward(self, img: torch.Tensor, mask: torch.Tensor = None):
+        return self.vit(img, mask)
+
+    def _calculate_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        batch_size, *_ = labels.shape
+        output = F.log_softmax(logits, dim=1)
+        loss = F.nll_loss(output, labels, reduction='sum')
+        loss = loss.sum() / batch_size
+        return loss
+
+    def training_step(self, batch: Any, batch_idx: int) -> Dict:  # type: ignore
+        imgs, labels = batch
+        logits = self(imgs)
+        loss = self._calculate_loss(logits, labels)
+        self.logger.log_metrics({"train_loss": loss})
+        return {"loss": loss}
+
+    def validation_step(self, batch: Any, batch_idx: int) -> Dict:  # type: ignore
+        imgs, labels = batch
+        logits = self(imgs)
+        loss = self._calculate_loss(logits, labels)
+        self.logger.experiment.log({"val_loss": loss})
+        return {"val_loss": loss}
+
+    def test_step(self, batch: Any, batch_idx: int) -> Dict:  # type: ignore
+        return self.validation_step(batch, batch_idx)
+
+    # ========== On epoch end ==========
+
+    def validation_epoch_end(self, outputs: List[Dict]):
+        with torch.no_grad():
+            mean_loss = torch.stack([out["val_loss"] for out in outputs]).mean().item()
+            self.logger.experiment.log({f"mean_val_loss": mean_loss})

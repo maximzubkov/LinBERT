@@ -6,11 +6,17 @@ import torch
 import torch.nn.functional as F
 import torchvision
 import vit_pytorch
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
+from pytorch_lightning.loggers import WandbLogger
 from torch import optim
 from torch.utils.data import DataLoader
+import os
+from dataset import ViTDataModule
 
 from configs import ModelConfig, vit_config
-from models import ViTModel
+from models import EfficientViT
+from models.vit import ViTModel
 from utils import set_seed_, parse_model_config
 
 vit_pytorch.vit_pytorch.MIN_NUM_PATCHES = 7
@@ -43,70 +49,42 @@ def train(
     else:
         raise ValueError("Unknown dataset")
 
-    vit = ViTModel(config=config)
+    model = ViTModel(config=config, training_args=training_args)
+    dm = ViTDataModule(dataset_name=dataset_name, training_args=training_args, is_test=is_test)
 
-    transform_mnist = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                                      torchvision.transforms.Normalize(
-                                                          (0.1307,), (0.3081,)
-                                                      )])
+    # define logger
+    wandb_logger = WandbLogger(
+        project="vit", log_model=True, offline=False
+    )
+    # define model checkpoint callback
+    checkpoint_callback = ModelCheckpoint(
+        filepath=join(wandb_logger.experiment.dir, "{epoch:02d}-{val_loss:.4f}"),
+        period=1,
+        save_top_k=-1,
+    )
+    # define early stopping callback
+    early_stopping_callback = EarlyStopping(patience=10, monitor="val_loss", verbose=True, mode="min")
+    # define learning rate logger
+    lr_logger = LearningRateMonitor("step")
+    gpu = -1 if torch.cuda.is_available() else None
+    distributed_backend = 'ddp' if torch.cuda.is_available() else None
+    trainer = Trainer(
+        max_epochs=training_args.num_train_epochs,
+        deterministic=True,
+        check_val_every_n_epoch=training_args.val_every_epoch,
+        logger=wandb_logger,
+        gpus=gpu,
+        distributed_backend=distributed_backend,
+        progress_bar_refresh_rate=1,
+        callbacks=[
+            lr_logger,
+            early_stopping_callback,
+            checkpoint_callback,
+        ],
+    )
 
-    train_ = torchvision.datasets.MNIST("data", train=True, download=True, transform=transform_mnist)
-    train_loader = DataLoader(train_, batch_size=training_args.train_batch_size, shuffle=True)
-
-    test_ = torchvision.datasets.MNIST("data", train=False, download=True, transform=transform_mnist)
-    test_loader = DataLoader(test_, batch_size=training_args.eval_batch_size, shuffle=True)
-
-    def train_epoch(model, optimizer, data_loader, loss_history):
-        total_samples = len(data_loader.dataset)
-        model.train()
-
-        for i, (data, target) in enumerate(data_loader):
-            optimizer.zero_grad()
-            output = F.log_softmax(model(data), dim=1)
-            loss = F.nll_loss(output, target)
-            loss.backward()
-            optimizer.step()
-
-            if i % 100 == 0:
-                print('[' + '{:5}'.format(i * len(data)) + '/' + '{:5}'.format(total_samples) +
-                      ' (' + '{:3.0f}'.format(100 * i / len(data_loader)) + '%)]  Loss: ' +
-                      '{:6.4f}'.format(loss.item()))
-                loss_history.append(loss.item())
-
-    def evaluate(model, data_loader, loss_history):
-        model.eval()
-
-        total_samples = len(data_loader.dataset)
-        correct_samples = 0
-        total_loss = 0
-
-        with torch.no_grad():
-            for data, target in data_loader:
-                output = F.log_softmax(model(data), dim=1)
-                loss = F.nll_loss(output, target, reduction='sum')
-                _, pred = torch.max(output, dim=1)
-
-                total_loss += loss.item()
-                correct_samples += pred.eq(target).sum()
-
-        avg_loss = total_loss / total_samples
-        loss_history.append(avg_loss)
-        print('\nAverage test loss: ' + '{:.4f}'.format(avg_loss) +
-              '  Accuracy:' + '{:5}'.format(correct_samples) + '/' +
-              '{:5}'.format(total_samples) + ' (' +
-              '{:4.2f}'.format(100.0 * correct_samples / total_samples) + '%)\n')
-
-    start_time = time.time()
-
-    optimizer = optim.Adam(vit.parameters(), lr=training_args.learning_rate)
-
-    train_loss_history, test_loss_history = [], []
-    for epoch in range(1, int(training_args.num_train_epochs) + 1):
-        print('Epoch:model', epoch)
-        train_epoch(vit, optimizer, train_loader, train_loss_history)
-        evaluate(vit, test_loader, test_loss_history)
-
-    print('Execution time:', '{:5.2f}'.format(time.time() - start_time), 'seconds')
+    trainer.fit(model=model, datamodule=dm)
+    trainer.test()
 
 
 if __name__ == "__main__":

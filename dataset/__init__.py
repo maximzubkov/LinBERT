@@ -4,6 +4,8 @@ from os.path import join
 from datasets import load_dataset
 from transformers import PreTrainedTokenizerFast, BertConfig
 
+from .vit_data_module import ViTDataModule  # noqa
+
 data_path = "data"
 
 dataset_config = {

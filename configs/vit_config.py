@@ -1,10 +1,21 @@
+from dataclasses import dataclass
 from typing import Tuple
 
-from transformers import BertConfig, TrainingArguments
+from transformers import BertConfig
 
 from dataset import dataset_config
 from .model_config import ModelConfig
 
+
+@dataclass
+class TrainingArguments:
+    train_batch_size: int
+    eval_batch_size: int
+    learning_rate: float
+    seed: int
+    num_train_epochs: int
+    val_every_epoch: int
+    save_every_epoch: int
 
 def vit_config(
         dataset_name: str,
@@ -15,20 +26,13 @@ def vit_config(
 ) -> Tuple[BertConfig, TrainingArguments]:
     if is_test:
         training_args = TrainingArguments(
-            output_dir=output_path,
-            overwrite_output_dir=True,
             num_train_epochs=2,
-            per_device_train_batch_size=5,
-            per_device_eval_batch_size=5,
-            evaluation_strategy="steps",
-            save_steps=10_000,
+            train_batch_size=5,
+            eval_batch_size=5,
             seed=seed,
-            do_train=True,
-            do_eval=True,
-            eval_steps=50,
-            logging_steps=50,
             learning_rate=0.003,
-            save_total_limit=2,
+            val_every_epoch=1,
+            save_every_epoch=1,
         )
 
         config = BertConfig(
@@ -48,20 +52,13 @@ def vit_config(
         )
     else:
         training_args = TrainingArguments(
-            output_dir=output_path,
-            overwrite_output_dir=True,
             num_train_epochs=2,
-            per_device_train_batch_size=32,
-            per_device_eval_batch_size=32,
-            evaluation_strategy="steps",
-            save_steps=10_000,
+            train_batch_size=32,
+            eval_batch_size=32,
             seed=seed,
-            do_train=True,
-            do_eval=True,
-            eval_steps=200,
-            logging_steps=50,
             learning_rate=0.003,
-            save_total_limit=2,
+            save_every_epoch=1,
+            val_every_epoch=1
         )
 
         config = BertConfig(
