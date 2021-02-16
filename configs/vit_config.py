@@ -17,9 +17,9 @@ class TrainingArguments:
     val_every_epoch: int
     save_every_epoch: int
 
+
 def vit_config(
         dataset_name: str,
-        output_path: str,
         seed: int,
         is_test: bool,
         model_config: ModelConfig,

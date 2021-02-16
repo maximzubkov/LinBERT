@@ -1,15 +1,15 @@
-from typing import Tuple, List, Any, Dict, Union
+from typing import List, Any, Dict
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from einops import rearrange
-from torch.optim import Optimizer, Adam
-from configs import TrainingArguments
+from pytorch_lightning import LightningModule
+from torch.optim import Adam
 from transformers import BertConfig
 from vit_pytorch import ViT
-import torch.nn.functional as F
-from pytorch_lightning import LightningModule
 
+from configs import TrainingArguments
 from models.modules.fast_transformers import LinearAttention
 
 
@@ -108,4 +108,4 @@ class ViTModel(LightningModule):
     def validation_epoch_end(self, outputs: List[Dict]):
         with torch.no_grad():
             mean_loss = torch.stack([out["val_loss"] for out in outputs]).mean().item()
-            self.logger.experiment.log({f"mean_val_loss": mean_loss})
+            self.logger.experiment.log({"mean_val_loss": mean_loss})

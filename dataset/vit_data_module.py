@@ -4,9 +4,9 @@ from typing import Any
 import torch
 import torchvision.transforms as transforms
 from pytorch_lightning import LightningDataModule
-from transformers import TrainingArguments
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
+from transformers import TrainingArguments
 
 text_datasets = ["poj_104"]
 

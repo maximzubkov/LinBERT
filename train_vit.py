@@ -1,21 +1,14 @@
-import time
 from argparse import ArgumentParser
 from os.path import join
 
 import torch
-import torch.nn.functional as F
-import torchvision
 import vit_pytorch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
-from torch import optim
-from torch.utils.data import DataLoader
-import os
-from dataset import ViTDataModule
 
 from configs import ModelConfig, vit_config
-from models import EfficientViT
+from dataset import ViTDataModule
 from models.vit import ViTModel
 from utils import set_seed_, parse_model_config
 
