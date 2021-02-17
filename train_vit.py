@@ -1,10 +1,9 @@
 from argparse import ArgumentParser
-from os.path import join
 
 import torch
 import vit_pytorch
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
+from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 
 from configs import ModelConfig, vit_config
