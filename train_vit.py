@@ -58,7 +58,7 @@ def train(
         accelerator=accelerator,
         logger=wandb_logger,
         gpus=gpu,
-        progress_bar_refresh_rate=1,
+        progress_bar_refresh_rate=20,
         callbacks=[
             lr_logger,
             early_stopping_callback,

@@ -102,7 +102,7 @@ class ViTModel(LightningModule):
                 num_classes=self.config.num_labels
             )
             log["train/accuracy"] = conf_matrix.trace() / conf_matrix.sum()
-        self.log_dict(log)
+        self.log_dict(log, sync_dist=True)
 
         return {"loss": loss, "confusion_matrix": conf_matrix}
 
@@ -139,7 +139,7 @@ class ViTModel(LightningModule):
             log[f"{group}/accuracy"] = (accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()).item()
 
             self.log_dict(log)
-            self.log(f"{group}_loss", mean_loss)
+            self.log(f"{group}_loss", mean_loss, sync_dist=True)
 
     def training_epoch_end(self, outputs: List[Dict]):
         self._shared_epoch_end(outputs, "train")
