@@ -20,7 +20,7 @@ class ViTDataModule(LightningDataModule):
         self.training_args = training_args
         self.is_test = is_test
 
-    def prepare_data(self):
+    def setup(self, stage=None):
         if self.dataset_name == "mnist":
             transform = transforms.Compose([transforms.ToTensor(),
                                             transforms.Normalize((0.1307,), (0.3081,))])
@@ -32,7 +32,7 @@ class ViTDataModule(LightningDataModule):
             self.train_dataset,
             batch_size=self.training_args.train_batch_size,
             collate_fn=self._collate,
-            num_workers=10
+            num_workers=2
         )
 
     def val_dataloader(self):
@@ -40,7 +40,7 @@ class ViTDataModule(LightningDataModule):
             self.eval_dataset,
             batch_size=self.training_args.eval_batch_size,
             collate_fn=self._collate,
-            num_workers=10
+            num_workers=2
         )
 
     def test_dataloader(self):
@@ -48,7 +48,7 @@ class ViTDataModule(LightningDataModule):
             self.eval_dataset,
             batch_size=self.training_args.eval_batch_size,
             collate_fn=self._collate,
-            num_workers=10
+            num_workers=2
         )
 
     @staticmethod

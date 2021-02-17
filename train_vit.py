@@ -45,34 +45,28 @@ def train(
     # define logger
     project = "vit_test" if is_test else "vit"
     wandb_logger = WandbLogger(
-        project=project, log_model=not is_test, offline=is_test
-    )
-    # define model checkpoint callback
-    checkpoint_callback = ModelCheckpoint(
-        filepath=join(wandb_logger.experiment.dir, "{epoch:02d}-{val_loss:.4f}"),
-        period=1,
-        save_top_k=-1,
+        project=project, log_model=False, offline=is_test
     )
     # define early stopping callback
     early_stopping_callback = EarlyStopping(patience=10, monitor="val_loss", verbose=True, mode="min")
     # define learning rate logger
     lr_logger = LearningRateMonitor("step")
     gpu = -1 if torch.cuda.is_available() else None
+    accelerator = "ddp" if torch.cuda.device_count() else None
     trainer = Trainer(
         max_epochs=training_args.num_train_epochs,
         check_val_every_n_epoch=training_args.val_every_epoch,
+        accelerator=accelerator,
         logger=wandb_logger,
         gpus=gpu,
         progress_bar_refresh_rate=1,
         callbacks=[
             lr_logger,
             early_stopping_callback,
-            checkpoint_callback,
         ],
     )
 
     trainer.fit(model=model, datamodule=dm)
-    trainer.test()
 
 
 if __name__ == "__main__":

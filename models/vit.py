@@ -36,7 +36,9 @@ class ViTLinBertSelfAttention(nn.Module):
         qkv = self.to_qkv(x_).chunk(3, dim=-1)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b n h d', h=self.num_attention_heads), qkv)
 
-        mask = torch.ones(1).cuda()
+        mask = torch.ones(1)
+        if torch.cuda.is_available():
+            mask = mask.cuda()
         out = self.attention(q, k, v, mask)
 
         out = rearrange(out, 'b n h d -> b n (h d)')
