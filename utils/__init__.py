@@ -1,9 +1,12 @@
 import random
+from argparse import ArgumentParser
 
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from transformers import EvalPrediction
 from transformers.trainer_utils import set_seed
+
+from configs import ModelConfig
 
 
 def set_seed_(seed: int):
@@ -24,3 +27,22 @@ def compute_metrics(pred: EvalPrediction):
         "accuracy": accuracy,
         "precision": precision,
     }
+
+
+def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
+    arg_parser.add_argument("--has_pos_embed_2d", action='store_true')
+    arg_parser.add_argument("--is_linear", action='store_true')
+    arg_parser.add_argument("--has_batch_norm", action='store_true')
+    arg_parser.add_argument("--has_pos_attention", action='store_true')
+    arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
+    arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "orig", "fft_2d", "naive_2d"], default=None)
+    args = arg_parser.parse_args()
+
+    return ModelConfig(
+        is_linear=args.is_linear,
+        has_batch_norm=args.has_batch_norm,
+        has_pos_attention=args.has_pos_attention,
+        has_pos_embed_2d=args.has_pos_embed_2d,
+        feature_map=args.feature_map,
+        pos_bias_type=args.pos_bias_type,
+    )

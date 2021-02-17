@@ -13,3 +13,7 @@ pandas~=1.0.1
 gdown==3.12.2
 scikit-image~=0.17.2
 tqdm~=4.49.0
+dataclasses~=0.6
+torchvision~=0.7.0
+pytorch-lightning==1.1.8
+vit-pytorch==0.6.7

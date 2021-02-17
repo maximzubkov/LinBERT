@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from os.path import join
-import numpy as np
 
+import numpy as np
 from tqdm import tqdm
 
 
