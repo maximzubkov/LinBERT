@@ -38,7 +38,7 @@ class PositionalBias(nn.Module):
                 requires_grad=True
             )
         if self.type_ == "fft":
-            self.o_ = torch.ones(self.seq_len)
+            self.o_ = torch.nn.Parameter(torch.ones(self.seq_len), requires_grad=False)
         elif self.type_ == "fft_2d":
             self.o_ = torch.ones(self.n)
             self.o_ = nn.functional.pad(self.o_, [self.n - 1, 0])
@@ -69,8 +69,10 @@ class PositionalBias(nn.Module):
 
     def _naive(self, v):
         # [batch_size, seq_len, seq_len]
-        _, seq_len, *_ = v.shape
+        v_ = v[:, 1:-1, :, :]
+        _, seq_len, *_ = v_.shape
         bias = self._construct_bias(seq_len)
+        bias = F.pad(input=bias, pad=[1, 1, 1, 1], mode='constant', value=0)
         z_pb = bias.sum(-1).transpose(1, 0).unsqueeze(0)
         pbv = torch.einsum("nlhd,hlj->njhd", v, bias)
         return pbv, z_pb
@@ -109,9 +111,10 @@ class PositionalBias(nn.Module):
     def _fft(self, v):
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
+        seq_len -= 2
         z_fft = self._compute_z_fft(seq_len)
 
-        v_ = v.permute(0, 3, 2, 1).reshape(batch_size * emb_dim, n_heads, seq_len)
+        v_ = v[:, 1:-1, :, :].permute(0, 3, 2, 1).reshape(batch_size * emb_dim, n_heads, seq_len)
 
         # Since z has shape [num_heads, seq_len * 2 - 1] we need to pad
         # values with zeros
@@ -120,13 +123,16 @@ class PositionalBias(nn.Module):
 
         pbv = torch.irfft(self._complex_mul(v_fft, z_fft), 1)
         pbv = pbv[:, :, :seq_len]
-        pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len).permute(0, 3, 2, 1)
+        pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len)
+        pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
+        pbv = pbv.permute(0, 3, 2, 1)
 
         o_ = nn.functional.pad(self.o_[:seq_len], [seq_len - 1, 0])
         o_fft = torch.rfft(o_, 1)
 
         z_pb = torch.irfft(self._complex_mul(z_fft, o_fft), 1)
         z_pb = z_pb[:, :seq_len]
+        z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
         z_pb = z_pb.transpose(1, 0).unsqueeze(0)
 
         return pbv, z_pb
@@ -153,7 +159,7 @@ class PositionalBias(nn.Module):
         RxU_m = RxU_m[..., :shape]
 
         pbv = RxV_m.unsqueeze(-2) + RxU_m.unsqueeze(-1)
-        pbv = pbv.reshape(batch_size, emb_dim, n_heads, -1)
+        pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len)
         pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
         pbv = pbv.permute(0, 3, 2, 1)
 
