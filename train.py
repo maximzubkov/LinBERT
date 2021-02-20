@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from os.path import join
 
 from transformers import BertTokenizerFast
-from transformers import Trainer
+from transformers import Trainer, DataCollatorWithPadding
 
 from configs import yelp_config, pf_config, ModelConfig
 from dataset import get_dataset
@@ -85,6 +85,11 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
+        data_collator=DataCollatorWithPadding(
+            tokenizer=tokenizer,
+            padding="longest",
+            max_length=max_seq_len
+        )
     )
 
     trainer.train()
