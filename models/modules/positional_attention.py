@@ -37,7 +37,9 @@ class PositionalBias(nn.Module):
                 torch.sort(torch.randn(self.num_heads, self.seq_len), dim=-1)[0],
                 requires_grad=True
             )
-        if self.type_ == "fft_2d":
+        if self.type_ == "fft":
+            self.o_ = torch.ones(self.seq_len)
+        elif self.type_ == "fft_2d":
             self.o_ = torch.ones(self.n)
             self.o_ = nn.functional.pad(self.o_, [self.n - 1, 0])
             self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 1), requires_grad=False)
@@ -120,9 +122,8 @@ class PositionalBias(nn.Module):
         pbv = pbv[:, :, :seq_len]
         pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len).permute(0, 3, 2, 1)
 
-        o_ = torch.ones(seq_len)
-        o_ = nn.functional.pad(o_, [seq_len - 1, 0])
-        o_fft = torch.nn.Parameter(torch.rfft(o_, 1), requires_grad=False)
+        o_ = nn.functional.pad(self.o_[:seq_len], [seq_len - 1, 0])
+        o_fft = torch.rfft(o_, 1)
 
         z_pb = torch.irfft(self._complex_mul(z_fft, o_fft), 1)
         z_pb = z_pb[:, :seq_len]
