@@ -113,7 +113,6 @@ def _hf_dataset(
             return_token_type_ids=return_token_type_ids
         )
         e_.update({"label": [label2idx[label] for label in e["label"]]})
-        print(e_["input_ids"])
         return e_
 
     dataset = dataset.map(
