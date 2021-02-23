@@ -10,19 +10,23 @@ import torch
 import torch.nn as nn
 from torch.nn import Module
 
-from models.modules.common import elu_feature_map, relu_feature_map
+from models.modules.common import elu_feature_map, relu_feature_map, exp_feature_map
 from models.modules.fast_transformers.causal_product import causal_dot_product
-from models.modules.positional_attention import PositionalAttention, PositionalBias
+from models.modules.positional_attention import PositionalAttention
+from models.modules.positional_bias import PositionalBias
 
 
 class LinearAttention(Module):
     def __init__(self, config, pos_attention: PositionalAttention = None, eps=1e-6):
         super(LinearAttention, self).__init__()
         self.pos_attention = pos_attention
+        self.feature_map_name = config.feature_map
         if config.feature_map == "elu":
             self.feature_map = elu_feature_map
         elif config.feature_map == "relu":
             self.feature_map = relu_feature_map
+        elif config.feature_map == "exp":
+            self.feature_map = exp_feature_map
         else:
             raise ValueError("Invalid feature map specified")
         self.eps = eps
@@ -34,6 +38,13 @@ class LinearAttention(Module):
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
+        if self.feature_map_name == "exp":
+            # [batch_size, num_heads]
+            offset = q.mean(-3).mean(-1)
+            offset += k.mean(-3).mean(-1)
+        else:
+            offset = None
+
         if self.bn_q is not None:
             q = self.bn_q(q.transpose(2, 1)).transpose(2, 1)
         # [batch_size, q_seq_len, n_heads, p_s]
@@ -66,7 +77,7 @@ class LinearAttention(Module):
             y = None
 
             if self.pos_bias is not None:
-                pbv, z_pb = self.pos_bias(v)
+                pbv, z_pb = self.pos_bias(v, offset)
                 z = z + z_pb
                 y = pbv
 

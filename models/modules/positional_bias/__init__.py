@@ -1,8 +1,5 @@
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from models.modules.common import elu_feature_map, transpose_for_scores
 from .fft import FFTBias, FFTBias2d
 from .navie import NaiveBias, NaiveBias2d
 
@@ -21,4 +18,3 @@ class PositionalBias(nn.Module):
 
     def forward(self, v, offset=None):
         return self.bias(v, offset)
-
