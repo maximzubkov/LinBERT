@@ -44,7 +44,7 @@ def _test(naive_config: BertConfig, fft_config: BertConfig):
     naive_pos_bias = PositionalBias(naive_config)
     naive_pos_bias.eval()
 
-    naive_pos_bias.w.data = fft_pos_bias.w.data
+    naive_pos_bias.bias.w.data = fft_pos_bias.bias.w.data
 
     ppb_fft, z_pb_fft = fft_pos_bias(v)
 
@@ -53,13 +53,33 @@ def _test(naive_config: BertConfig, fft_config: BertConfig):
     assert torch.allclose(ppb_orig, ppb_fft, atol=1e-3), "PPB not equal"
 
 
-def test_pos_bias():
+def test_pos_bias_full():
     config1.pos_bias_type = "naive"
     config2.pos_bias_type = "fft"
+    config1.bias_base_type = "full"
+    config2.bias_base_type = "full"
     _test(config1, config2)
 
 
-def test_pos_bias_2d():
+def test_pos_bias_2d_full():
     config1.pos_bias_type = "naive_2d"
     config2.pos_bias_type = "fft_2d"
+    config1.bias_base_type = "full"
+    config2.bias_base_type = "full"
+    _test(config1, config2)
+
+
+def test_pos_bias_sym():
+    config1.pos_bias_type = "naive"
+    config2.pos_bias_type = "fft"
+    config1.bias_base_type = "symmetric"
+    config2.bias_base_type = "symmetric"
+    _test(config1, config2)
+
+
+def test_pos_bias_2d_sym():
+    config1.pos_bias_type = "naive_2d"
+    config2.pos_bias_type = "fft_2d"
+    config1.bias_base_type = "symmetric"
+    config2.bias_base_type = "symmetric"
     _test(config1, config2)
