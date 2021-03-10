@@ -23,7 +23,7 @@ class FFTBiasBase(nn.Module):
         if self.bias_base_type == "full":
             w_ = self.w[..., self.shape - seq_len: self.shape + seq_len - 1]
             z = torch.cat([
-                w_[..., -1].unsqueeze(-1), w_[..., :-1]
+                w_[..., 0].unsqueeze(-1), torch.flip(w_[..., 1:], dims=[-1])
             ], dim=-1)
         elif self.bias_base_type == "symmetric":
             w_ = self.w[..., :seq_len]
@@ -65,24 +65,22 @@ class FFTBias(FFTBiasBase):
             requires_grad=True
         )
         self.w.data.uniform_(-0.1, 0.1)
-        self.o_ = torch.nn.Parameter(torch.ones(seq_len_without_special), requires_grad=False)
+        self.o_ = torch.nn.Parameter(torch.ones(self.shape), requires_grad=False)
 
     def forward(self, v, offset):
-        # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
+        # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
         v_ = v[:, 1:-1, :, :]
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         z_fft = self._compute_z_fft(seq_len, offset)
 
-        v_ = v_.permute(0, 3, 2, 1).reshape(batch_size, emb_dim, n_heads, seq_len)
+        v_ = v_.permute(0, 3, 2, 1)
 
         pad_size = seq_len - 1
 
         v_ = nn.functional.pad(v_, [pad_size, 0])
         v_fft = torch.rfft(v_, 1)
-
         pbv = torch.irfft(self._complex_mul(v_fft, z_fft.unsqueeze(1)), 1)
         pbv = pbv[..., :seq_len]
-        pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len)
         pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
         pbv = pbv.permute(0, 3, 2, 1)
 

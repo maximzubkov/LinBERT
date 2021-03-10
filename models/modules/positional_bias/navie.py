@@ -19,16 +19,18 @@ class NaiveBiasBase(nn.Module):
             w_ = torch.exp(w_)
 
         if self.bias_base_type == "full":
-            p = w_
+            bias = torch.cat([
+                w_[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-2)
+                for i in range(seq_len)
+            ], -2)
         elif self.bias_base_type == "symmetric":
             p = torch.cat([torch.flip(w_[..., 1:], dims=[-1]), w_], dim=-1)
+            bias = torch.cat([
+                p[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-1)
+                for i in range(seq_len)
+            ], -1)
         else:
             raise ValueError("Unknown bias base type")
-
-        bias = torch.cat([
-            p[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-1)
-            for i in range(seq_len)
-        ], -1)
 
         return bias
 
@@ -71,7 +73,7 @@ class NaiveBias(NaiveBiasBase):
             bias = bias.squeeze()
             bias = repeat(bias, "h l j -> n h l j", n=v.shape[0])
         z_pb = bias.sum(-1).transpose(-2, -1).unsqueeze(0)
-        pbv = torch.einsum("nlhd,nhlj->njhd", v, bias)
+        pbv = torch.einsum("nlhd,nhlj->njhd", v, bias.transpose(-2, -1))
         return pbv, z_pb
 
 
@@ -105,10 +107,13 @@ class NaiveBias2d(NaiveBiasBase):
         x_ = bias.unsqueeze(-3).unsqueeze(-2)
         y_ = bias.unsqueeze(-2).unsqueeze(-1)
         w_ = x_ + y_
-        w_ = w_.reshape(n_heads, self.shape, self.shape, -1)
-        w_ = w_.reshape(n_heads, -1, self.shape ** 2)
+        w_batch_shape, *_ = w_.shape
+        w_ = w_.reshape(w_batch_shape, n_heads, self.shape, self.shape, -1)
+        w_ = w_.reshape(w_batch_shape, n_heads, -1, self.shape ** 2)
         w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
-        w_ = repeat(w_, 'h l j -> n h l j', n=v.shape[0])
+        if w_batch_shape == 1:
+            w_ = w_.squeeze()
+            w_ = repeat(w_, 'h l j -> n h l j', n=v.shape[0])
         z_pb = w_.sum(-1).transpose(-2, -1).unsqueeze(0)
-        pbv = torch.einsum("nlhd,nhlj->njhd", v, w_)
+        pbv = torch.einsum("nlhd,nhlj->njhd", v, w_.transpose(-2, -1))
         return pbv, z_pb
