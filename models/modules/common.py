@@ -11,5 +11,11 @@ def elu_feature_map(x):
     return torch.nn.functional.elu(x) + 1
 
 
+def exp_feature_map(x):
+    mean = x.mean(-3).mean(-1)
+    out = x - mean.unsqueeze(-1).unsqueeze(-3)
+    return torch.exp(out)
+
+
 def relu_feature_map(x):
     return torch.nn.functional.leaky_relu(x)

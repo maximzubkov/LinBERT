@@ -45,7 +45,7 @@ def test_lin_pos_attn():
     attention_mask = torch.ones((batch_size, seq_len), dtype=torch.uint8)
     head_mask = torch.ones((num_heads,), dtype=torch.uint8)
     ppv, z_pp = lin_pos_attn(q, v, head_mask=head_mask, attention_mask=attention_mask)
-    # positional information is independent to batch in case of full sequences
+    # positional_bias information is independent to batch in case of full sequences
     for i in range(batch_size - 1):
         assert torch.all(torch.eq(z_pp[i, :, :], z_pp[i + 1, :, :]))
 

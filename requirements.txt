@@ -17,3 +17,4 @@ dataclasses~=0.6
 torchvision~=0.7.0
 pytorch-lightning==1.1.8
 vit-pytorch==0.6.7
+einops~=0.3.0

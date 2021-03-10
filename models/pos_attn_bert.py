@@ -6,7 +6,7 @@ from transformers import BertModel
 from transformers.modeling_bert import BertSelfAttention
 
 from models.modules import PositionalAttention
-from models.modules.positional_attention import PositionalBias
+from models.modules.positional_bias import PositionalBias
 from models.modules.positional_embedding import Bert2DEmbeddings
 
 

@@ -9,3 +9,4 @@ class ModelConfig:
     has_pos_embed_2d: bool = False
     feature_map: str = "elu"
     pos_bias_type: str = None
+    bias_base_type: str = None
