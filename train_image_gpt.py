@@ -1,14 +1,13 @@
 import argparse
 
 import pytorch_lightning as pl
+import torch
 import yaml
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
-import torch
 
 from dataset import dataloaders
 from models import ImageGPT
-from utils import parse_model_config
 
 
 def train(args):

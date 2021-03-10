@@ -7,8 +7,8 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import LambdaLR
 
-from .modules import GPT2
 from utils import quantize
+from .modules import GPT2
 
 
 def _to_sequence(x):

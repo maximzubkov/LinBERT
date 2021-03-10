@@ -1,9 +1,9 @@
-import numpy as np
-from pathlib import Path
 import argparse
+from pathlib import Path
 
-from torchvision.transforms import ToTensor
+import numpy as np
 from sklearn.cluster import KMeans, MiniBatchKMeans
+from torchvision.transforms import ToTensor
 
 from dataset import image_gpt_datasets
 
