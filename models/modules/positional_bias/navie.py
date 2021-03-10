@@ -20,18 +20,15 @@ class NaiveBiasBase(nn.Module):
 
         if self.bias_base_type == "full":
             p = w_
-            bias = torch.cat([
-                p[..., self.shape - i - seq_len: self.shape - i].unsqueeze(-1)
-                for i in range(seq_len)
-            ], -1)
         elif self.bias_base_type == "symmetric":
             p = torch.cat([torch.flip(w_[..., 1:], dims=[-1]), w_], dim=-1)
-            bias = torch.cat([
-                p[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-1)
-                for i in range(seq_len)
-            ], -1)
         else:
             raise ValueError("Unknown bias base type")
+
+        bias = torch.cat([
+            p[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-1)
+            for i in range(seq_len)
+        ], -1)
 
         return bias
 
@@ -42,15 +39,16 @@ class NaiveBias(NaiveBiasBase):
         n_heads = config.num_attention_heads
         full_seq_len = config.max_position_embeddings
         seq_len_without_special = full_seq_len - 2
+        self.shape = seq_len_without_special
         if self.bias_base_type == "full":
-            self.shape = 2 * seq_len_without_special - 1
+            self.w_shape = 2 * seq_len_without_special - 1
         elif self.bias_base_type == "symmetric":
-            self.shape = seq_len_without_special
+            self.w_shape = seq_len_without_special
         else:
             raise ValueError("Unknown bias base type")
 
         self.w = torch.nn.Parameter(
-            torch.randn(1, n_heads, self.shape),
+            torch.randn(1, n_heads, self.w_shape),
             requires_grad=True
         )
         self.w.data.uniform_(-0.1, 0.1)
@@ -61,7 +59,7 @@ class NaiveBias(NaiveBiasBase):
         batch_size, seq_len, n_heads, emb_dim = v_.shape
 
         if self.bias_base_type == "full":
-            w_ = self.w
+            w_ = self.w[..., self.shape - seq_len: self.shape + seq_len - 1]
         elif self.bias_base_type == "symmetric":
             w_ = self.w[..., :seq_len]
         else:
