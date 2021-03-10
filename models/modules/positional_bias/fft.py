@@ -152,7 +152,7 @@ class FFTBias2d(FFTBiasBase):
         z_pb = z_pb[..., :self.shape] * self.shape
 
         z_pb = z_pb.unsqueeze(-2) + z_pb.unsqueeze(-1)
-        z_pb = z_pb.reshape(-1, n_heads, self.shape * self.shape)
+        z_pb = z_pb.reshape(batch_size, n_heads, self.shape * self.shape)
         z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
         z_pb = z_pb.transpose(-2, -1)
 

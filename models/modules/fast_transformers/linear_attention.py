@@ -40,8 +40,7 @@ class LinearAttention(Module):
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.feature_map_name == "exp":
             # [batch_size, num_heads]
-            offset = q.mean(-3).mean(-1)
-            offset += k.mean(-3).mean(-1)
+            offset = (q + k).mean(-3).mean(-1)
         else:
             offset = None
 
