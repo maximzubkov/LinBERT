@@ -5,10 +5,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
 from pytorch_lightning import LightningModule
+from pytorch_lightning.metrics.functional import confusion_matrix
 from torch.optim import Adam
 from transformers import BertConfig
 from vit_pytorch import ViT
-from pytorch_lightning.metrics.functional import confusion_matrix
 
 from configs import TrainingArguments
 from models.modules.fast_transformers import LinearAttention
