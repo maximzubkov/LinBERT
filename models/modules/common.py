@@ -19,3 +19,10 @@ def exp_feature_map(x):
 
 def relu_feature_map(x):
     return torch.nn.functional.leaky_relu(x)
+
+
+def compute_mask(x: torch.Tensor):
+    attn_mask = torch.full(
+        (len(x), len(x)), -float("Inf"), device=x.device, dtype=x.dtype
+    )
+    return torch.triu(attn_mask, diagonal=1)

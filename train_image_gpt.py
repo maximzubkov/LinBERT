@@ -26,6 +26,10 @@ def train(args, model_config: ModelConfig):
         model.learning_rate = config["learning_rate"]
         model.classify = config["classify"]
     else:
+        model_config.hidden_size = config["embed_dim"]
+        model_config.num_attention_heads = config["num_heads"]
+        model_config.max_position_embeddings = config["num_pixels"] ** 2
+        model_config.attention_probs_dropout_prob = 0.1
         model = ImageGPT(centroids=args.centroids, model_config=model_config, **config)
 
     train_dl, valid_dl, test_dl = dataloaders(args.dataset, config["batch_size"])
