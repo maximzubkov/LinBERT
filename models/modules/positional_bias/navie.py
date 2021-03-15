@@ -12,6 +12,10 @@ class NaiveBiasBase(nn.Module):
         self.type_ = config.pos_bias_type
         self.lm = config.lm
         self.has_specials = config.has_specials
+        self.n_heads = config.num_attention_heads
+        self.full_seq_len = config.max_position_embeddings
+        if self.has_specials:
+            self.full_seq_len = self.full_seq_len - 2
 
     def _construct_bias(self, w_: torch.Tensor, seq_len: int, offset: torch.Tensor):
         if offset is not None:
@@ -40,19 +44,17 @@ class NaiveBiasBase(nn.Module):
 class NaiveBias(NaiveBiasBase):
     def __init__(self, config):
         super(NaiveBias, self).__init__(config)
-        n_heads = config.num_attention_heads
-        full_seq_len = config.max_position_embeddings
-        seq_len_without_special = full_seq_len - 2
-        self.shape = seq_len_without_special
+        self.shape = self.full_seq_len
+
         if self.bias_base_type == "full":
-            self.w_shape = 2 * seq_len_without_special - 1
+            self.w_shape = 2 * self.shape - 1
         elif self.bias_base_type == "symmetric":
-            self.w_shape = seq_len_without_special
+            self.w_shape = self.shape
         else:
             raise ValueError("Unknown bias base type")
 
         self.w = torch.nn.Parameter(
-            torch.randn(1, n_heads, self.w_shape),
+            torch.randn(1, self.n_heads, self.w_shape),
             requires_grad=True
         )
         self.w.data.uniform_(-0.1, 0.1)
@@ -85,11 +87,7 @@ class NaiveBias(NaiveBiasBase):
 class NaiveBias2d(NaiveBiasBase):
     def __init__(self, config):
         super(NaiveBias2d, self).__init__(config)
-        n_heads = config.num_attention_heads
-        full_seq_len = config.max_position_embeddings
-        seq_len_without_special = full_seq_len - 2
-
-        self.shape = int(seq_len_without_special ** 0.5)
+        self.shape = int(self.full_seq_len ** 0.5)
 
         if self.bias_base_type == "full":
             self.w_shape = 2 * self.shape - 1
@@ -99,7 +97,7 @@ class NaiveBias2d(NaiveBiasBase):
             raise ValueError("Unknown bias base type")
 
         self.w = torch.nn.Parameter(
-            torch.randn(1, n_heads, self.w_shape),
+            torch.randn(1, self.n_heads, self.w_shape),
             requires_grad=True
         )
         self.w.data.uniform_(-0.1, 0.1)
@@ -118,7 +116,7 @@ class NaiveBias2d(NaiveBiasBase):
         if self.has_specials:
             w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
         if self.lm:
-            w_ = w_ * torch.tril(torch.ones_like(w_))
+            w_ = w_ * torch.tril(torch.ones(self.shape ** 2, self.shape ** 2)).unsqueeze(0).unsqueeze(0)
         if w_batch_shape == 1:
             w_ = w_.squeeze()
             w_ = repeat(w_, 'h l j -> n h l j', n=v.shape[0])

@@ -11,6 +11,10 @@ class FFTBiasBase(nn.Module):
         self.type_ = config.pos_bias_type
         self.lm = config.lm
         self.has_specials = config.has_specials
+        self.n_heads = config.num_attention_heads
+        self.full_seq_len = config.max_position_embeddings
+        if self.has_specials:
+            self.full_seq_len = self.full_seq_len - 2
 
     @staticmethod
     def _complex_mul(x, y):
@@ -56,11 +60,7 @@ class FFTBiasBase(nn.Module):
 class FFTBias(FFTBiasBase):
     def __init__(self, config):
         super(FFTBias, self).__init__(config)
-        n_heads = config.num_attention_heads
-        full_seq_len = config.max_position_embeddings
-        if self.has_specials:
-            full_seq_len = full_seq_len - 2
-        self.shape = full_seq_len
+        self.shape = self.full_seq_len
 
         if self.bias_base_type == "full":
             self.w_shape = 2 * self.shape - 1
@@ -70,7 +70,7 @@ class FFTBias(FFTBiasBase):
             raise ValueError("Unknown bias base type")
 
         self.w = torch.nn.Parameter(
-            torch.randn(1, n_heads, self.w_shape),
+            torch.randn(1, self.n_heads, self.w_shape),
             requires_grad=True
         )
         self.w.data.uniform_(-0.1, 0.1)
@@ -108,11 +108,7 @@ class FFTBias(FFTBiasBase):
 class FFTBias2d(FFTBiasBase):
     def __init__(self, config):
         super(FFTBias2d, self).__init__(config)
-        n_heads = config.num_attention_heads
-        full_seq_len = config.max_position_embeddings
-        if self.has_specials:
-            full_seq_len = full_seq_len - 2
-        self.shape = int(full_seq_len ** 0.5)
+        self.shape = int(self.full_seq_len ** 0.5)
 
         if self.bias_base_type == "full":
             self.w_shape = 2 * self.shape - 1
@@ -122,7 +118,7 @@ class FFTBias2d(FFTBiasBase):
             raise ValueError("Unknown bias base type")
 
         self.w = torch.nn.Parameter(
-            torch.randn(1, n_heads, self.w_shape),
+            torch.randn(1, self.n_heads, self.w_shape),
             requires_grad=True
         )
         self.w.data.uniform_(-0.1, 0.1)
