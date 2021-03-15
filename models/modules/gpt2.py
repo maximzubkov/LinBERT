@@ -109,7 +109,9 @@ class GPT2(nn.Module):
 
         # transformer
         for layer in self.layers:
+            h = h.transpose(0, 1)
             h = layer(h)
+            h = h.transpose(0, 1)
 
         h = self.ln_f(h)
 

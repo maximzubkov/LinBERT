@@ -26,6 +26,8 @@ def train(args, model_config: ModelConfig):
         model.learning_rate = config["learning_rate"]
         model.classify = config["classify"]
     else:
+        model_config.lm = True
+        model_config.has_specials = False
         model_config.hidden_size = config["embed_dim"]
         model_config.num_attention_heads = config["num_heads"]
         model_config.max_position_embeddings = config["num_pixels"] ** 2

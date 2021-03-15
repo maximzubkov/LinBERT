@@ -18,6 +18,8 @@ config1 = BertConfig(
     has_pos_attention=True,
     has_batch_norm=False,
     pos_bias_type=None,
+    lm=False,
+    has_specials=True,
     feature_map="elu"
 )
 
@@ -31,6 +33,8 @@ config2 = BertConfig(
     has_pos_attention=True,
     has_batch_norm=False,
     pos_bias_type=None,
+    lm=False,
+    has_specials=True,
     feature_map="elu"
 )
 

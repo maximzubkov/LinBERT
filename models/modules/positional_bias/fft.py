@@ -9,6 +9,8 @@ class FFTBiasBase(nn.Module):
         self.bias_base_type = config.bias_base_type
         self.feature_map = config.feature_map
         self.type_ = config.pos_bias_type
+        self.lm = config.lm
+        self.has_specials = config.has_specials
 
     @staticmethod
     def _complex_mul(x, y):
@@ -41,6 +43,12 @@ class FFTBiasBase(nn.Module):
         if self.feature_map == "exp":
             z = torch.exp(z)
 
+        if self.lm:
+            mask = torch.ones_like(z)
+            *_, shape = z.shape
+            mask_len = (shape + 1) // 2
+            mask[mask_len:] = 0
+            z = z * mask
         # z_fft has shape [num_heads, seq_len * 2 - 1, 2], the last two dims belongs to real and img parts
         return torch.rfft(z, 1)
 
@@ -50,13 +58,14 @@ class FFTBias(FFTBiasBase):
         super(FFTBias, self).__init__(config)
         n_heads = config.num_attention_heads
         full_seq_len = config.max_position_embeddings
-        seq_len_without_special = full_seq_len - 2
-        self.shape = seq_len_without_special
+        if self.has_specials:
+            full_seq_len = full_seq_len - 2
+        self.shape = full_seq_len
 
         if self.bias_base_type == "full":
-            self.w_shape = 2 * seq_len_without_special - 1
+            self.w_shape = 2 * self.shape - 1
         elif self.bias_base_type == "symmetric":
-            self.w_shape = seq_len_without_special
+            self.w_shape = self.shape
         else:
             raise ValueError("Unknown bias base type")
 
@@ -69,7 +78,7 @@ class FFTBias(FFTBiasBase):
 
     def forward(self, v, offset):
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
-        v_ = v[:, 1:-1, :, :]
+        v_ = v[:, 1:-1, :, :] if self.has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         z_fft = self._compute_z_fft(seq_len, offset)
 
@@ -81,7 +90,8 @@ class FFTBias(FFTBiasBase):
         v_fft = torch.rfft(v_, 1)
         pbv = torch.irfft(self._complex_mul(v_fft, z_fft.unsqueeze(1)), 1)
         pbv = pbv[..., :seq_len]
-        pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
+        if self.has_specials:
+            pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
         pbv = pbv.permute(0, 3, 2, 1)
 
         o_ = nn.functional.pad(self.o_[:seq_len], [pad_size, 0])
@@ -89,7 +99,8 @@ class FFTBias(FFTBiasBase):
 
         z_pb = torch.irfft(self._complex_mul(z_fft, o_fft), 1)
         z_pb = z_pb[..., :seq_len]
-        z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
+        if self.has_specials:
+            z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
         z_pb = z_pb.transpose(-2, -1)
         return pbv, z_pb
 
@@ -99,9 +110,9 @@ class FFTBias2d(FFTBiasBase):
         super(FFTBias2d, self).__init__(config)
         n_heads = config.num_attention_heads
         full_seq_len = config.max_position_embeddings
-        seq_len_without_special = full_seq_len - 2
-
-        self.shape = int(seq_len_without_special ** 0.5)
+        if self.has_specials:
+            full_seq_len = full_seq_len - 2
+        self.shape = int(full_seq_len ** 0.5)
 
         if self.bias_base_type == "full":
             self.w_shape = 2 * self.shape - 1
@@ -122,7 +133,7 @@ class FFTBias2d(FFTBiasBase):
 
     def forward(self, v, offset):
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
-        v_ = v[:, 1:-1, :, :]
+        v_ = v[:, 1:-1, :, :] if self.has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         z_fft = self._compute_z_fft(self.shape, offset)
 
@@ -141,7 +152,8 @@ class FFTBias2d(FFTBiasBase):
 
         pbv = RxV_m.unsqueeze(-2) + RxU_m.unsqueeze(-1)
         pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len)
-        pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
+        if self.has_specials:
+            pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
         pbv = pbv.permute(0, 3, 2, 1)
 
         z_pb = torch.irfft(self._complex_mul(self.o_fft, z_fft), 1)
@@ -149,7 +161,8 @@ class FFTBias2d(FFTBiasBase):
 
         z_pb = z_pb.unsqueeze(-2) + z_pb.unsqueeze(-1)
         z_pb = z_pb.reshape(-1, n_heads, self.shape * self.shape)
-        z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
+        if self.has_specials:
+            z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
         z_pb = z_pb.transpose(-2, -1)
 
         return pbv, z_pb
