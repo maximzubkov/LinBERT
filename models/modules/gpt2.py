@@ -4,14 +4,14 @@ import torch.nn as nn
 from configs import ModelConfig
 
 
-class Block(nn.Module):
+class OrigBlock(nn.Module):
     def __init__(
             self,
             embed_dim: int,
             num_heads: int,
             model_config: ModelConfig
     ):
-        super(Block, self).__init__()
+        super(OrigBlock, self).__init__()
         self.model_config = model_config
         self.ln_1 = nn.LayerNorm(embed_dim)
         self.ln_2 = nn.LayerNorm(embed_dim)

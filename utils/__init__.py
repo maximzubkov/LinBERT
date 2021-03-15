@@ -35,8 +35,9 @@ def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
     arg_parser.add_argument("--is_linear", action='store_true')
     arg_parser.add_argument("--has_batch_norm", action='store_true')
     arg_parser.add_argument("--has_pos_attention", action='store_true')
-    arg_parser.add_argument("--feature_map", choices=["elu", "relu"], default="elu")
+    arg_parser.add_argument("--feature_map", choices=["elu", "relu", "exp"], default="elu")
     arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "orig", "fft_2d", "naive_2d"], default=None)
+    arg_parser.add_argument("--bias_base_type", choices=["full", "symmetric"], default=None)
     args = arg_parser.parse_args()
 
     return ModelConfig(
@@ -46,4 +47,5 @@ def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
         has_pos_embed_2d=args.has_pos_embed_2d,
         feature_map=args.feature_map,
         pos_bias_type=args.pos_bias_type,
+        bias_base_type=args.bias_base_type
     )
