@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import LambdaLR
 
+from configs import ModelConfig
 from utils import quantize
 from .modules import GPT2
 
@@ -22,6 +23,7 @@ class ImageGPT(pl.LightningModule):
     def __init__(
         self,
         centroids,
+        model_config: ModelConfig,
         embed_dim=16,
         num_heads=2,
         num_layers=8,
@@ -35,6 +37,7 @@ class ImageGPT(pl.LightningModule):
         **kwargs,
     ):
         super(ImageGPT, self).__init__()
+        self.model_config = model_config
         self.save_hyperparameters()
         self.gpt = GPT2(
             embed_dim=embed_dim,
@@ -43,6 +46,7 @@ class ImageGPT(pl.LightningModule):
             num_positions=num_pixels * num_pixels,
             num_vocab=num_vocab,
             num_classes=num_classes,
+            model_config=model_config
         )
 
         self.centroids = nn.Parameter(

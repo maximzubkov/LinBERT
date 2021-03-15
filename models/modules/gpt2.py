@@ -1,10 +1,18 @@
 import torch
 import torch.nn as nn
 
+from configs import ModelConfig
+
 
 class Block(nn.Module):
-    def __init__(self, embed_dim, num_heads):
+    def __init__(
+            self,
+            embed_dim: int,
+            num_heads: int,
+            model_config: ModelConfig
+    ):
         super(Block, self).__init__()
+        self.model_config = model_config
         self.ln_1 = nn.LayerNorm(embed_dim)
         self.ln_2 = nn.LayerNorm(embed_dim)
         self.attn = nn.MultiheadAttention(embed_dim, num_heads)
@@ -30,10 +38,17 @@ class Block(nn.Module):
 
 class GPT2(nn.Module):
     def __init__(
-        self, embed_dim, num_heads, num_layers, num_positions, num_vocab, num_classes
+        self,
+        embed_dim: int,
+        num_heads: int,
+        num_layers: int,
+        num_positions: int,
+        num_vocab: int,
+        num_classes: int,
+        model_config: ModelConfig
     ):
         super(GPT2, self).__init__()
-
+        self.model_config = model_config
         self.embed_dim = embed_dim
 
         # start of sequence token
@@ -45,7 +60,7 @@ class GPT2(nn.Module):
 
         self.layers = nn.ModuleList()
         for _ in range(num_layers):
-            self.layers.append(Block(embed_dim, num_heads))
+            self.layers.append(Block(embed_dim, num_heads, model_config))
 
         self.ln_f = nn.LayerNorm(embed_dim)
         self.head = nn.Linear(embed_dim, num_vocab, bias=False)

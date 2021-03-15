@@ -6,12 +6,13 @@ import yaml
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 
+from configs import ModelConfig
 from dataset import dataloaders
 from models import ImageGPT
+from utils import parse_model_config
 
 
-def train(args):
-
+def train(args, model_config: ModelConfig):
     with open(args.config, "rb") as f:
         config = yaml.safe_load(f)
 
@@ -25,7 +26,7 @@ def train(args):
         model.learning_rate = config["learning_rate"]
         model.classify = config["classify"]
     else:
-        model = ImageGPT(centroids=args.centroids, **config)
+        model = ImageGPT(centroids=args.centroids, model_config=model_config, **config)
 
     train_dl, valid_dl, test_dl = dataloaders(args.dataset, config["batch_size"])
 
@@ -103,7 +104,8 @@ if __name__ == "__main__":
     parser_test.add_argument("config", type=str)
     parser_test.set_defaults(func=test)
 
+    model_config_ = parse_model_config(parser)
     args = parser.parse_args()
     args.centroids = f"data/{args.dataset}_centroids.npy"
 
-    args.func(args)
+    args.func(args, model_config_)
