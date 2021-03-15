@@ -10,6 +10,8 @@ class NaiveBiasBase(nn.Module):
         self.bias_base_type = config.bias_base_type
         self.feature_map = config.feature_map
         self.type_ = config.pos_bias_type
+        self.lm = config.lm
+        self.has_specials = config.has_specials
 
     def _construct_bias(self, w_: torch.Tensor, seq_len: int, offset: torch.Tensor):
         if offset is not None:
@@ -57,7 +59,7 @@ class NaiveBias(NaiveBiasBase):
 
     def forward(self, v, offset):
         # [batch_size, seq_len, seq_len]
-        v_ = v[:, 1:-1, :, :]
+        v_ = v[:, 1:-1, :, :] if self.has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
 
         if self.bias_base_type == "full":
@@ -68,7 +70,10 @@ class NaiveBias(NaiveBiasBase):
             raise ValueError("Unknown bias base type")
 
         bias = self._construct_bias(w_, seq_len, offset)
-        bias = F.pad(input=bias, pad=[1, 1, 1, 1], mode='constant', value=0)
+        if self.has_specials:
+            bias = F.pad(input=bias, pad=[1, 1, 1, 1], mode='constant', value=0)
+        if self.lm:
+            bias = bias * torch.tril(torch.ones_like(bias))
         if (len(bias.shape) == 4) and (bias.shape[0] == 1):
             bias = bias.squeeze()
             bias = repeat(bias, "h l j -> n h l j", n=v.shape[0])
@@ -110,7 +115,10 @@ class NaiveBias2d(NaiveBiasBase):
         w_batch_shape, *_ = w_.shape
         w_ = w_.reshape(w_batch_shape, n_heads, self.shape, self.shape, -1)
         w_ = w_.reshape(w_batch_shape, n_heads, -1, self.shape ** 2)
-        w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
+        if self.has_specials:
+            w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
+        if self.lm:
+            w_ = w_ * torch.tril(torch.ones_like(w_))
         if w_batch_shape == 1:
             w_ = w_.squeeze()
             w_ = repeat(w_, 'h l j -> n h l j', n=v.shape[0])
