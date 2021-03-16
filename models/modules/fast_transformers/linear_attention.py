@@ -56,10 +56,16 @@ class LinearAttention(Module):
 
         if attention_mask is None:  # causal attention
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
-            v = self.causal_linear(q, k, v)
+            v_ = self.causal_linear(q, k, v)
+
+            if self.pos_bias is not None:
+                pbv, z_pb = self.pos_bias(v, offset)
+                z = z + z_pb
+                v_ = v_ + pbv
             if head_mask is not None:
-                v = v * head_mask.view(1, 1, *head_mask.shape, 1)
-            return v / z.unsqueeze(-1)
+                v_ = v_ * head_mask.view(1, 1, *head_mask.shape, 1)
+
+            return v_ / z.unsqueeze(-1)
         else:
             torch.jit._unwrap_optional(attention_mask)
             k = k * attention_mask.view(*attention_mask.shape, 1, 1)

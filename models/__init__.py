@@ -1,5 +1,6 @@
 from transformers import BertForSequenceClassification
 
+from .image_gpt import ImageGPT  # noqa
 from .linear_bert import LinBertModel  # noqa
 from .pos_attn_bert import PosAttnBertModel  # noqa
 from .vit import EfficientViT  # noqa
