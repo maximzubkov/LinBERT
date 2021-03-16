@@ -22,18 +22,22 @@ class NaiveBiasBase(BiasBase):
 
     def _construct_bias(self, w_: torch.Tensor, seq_len: int):
         if self.bias_base_type == "full":
-            bias = torch.cat([
-                w_[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-2)
-                for i in range(seq_len)
-            ], -2)
+            w_ = torch.cat([
+                w_[..., -1].unsqueeze(-1),  # w_{N-1}
+                torch.flip(w_[..., 1:], dims=[-1]),  # w_{N-1}, w_{N-2}, ..., w_{1}
+                w_[..., :-1]  # w_{0}, w_{1}, ..., w_{N-2}
+            ], dim=-1)
         elif self.bias_base_type == "symmetric":
-            p = torch.cat([torch.flip(w_[..., 1:], dims=[-1]), w_], dim=-1)
-            bias = torch.cat([
-                p[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-1)
-                for i in range(seq_len)
-            ], -1)
+            w_ = torch.cat([
+                torch.flip(w_[..., 1:], dims=[-1]),
+                w_
+            ], dim=-1)
         else:
             raise ValueError("Unknown bias base type")
+        bias = torch.cat([
+            w_[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-1)
+            for i in range(seq_len)
+        ], dim=-1)
 
         return bias
 

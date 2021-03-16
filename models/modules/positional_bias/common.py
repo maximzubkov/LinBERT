@@ -23,9 +23,7 @@ class BiasBase(nn.Module):
         else:
             raise ValueError("Unknown bias base type")
 
-        w_ = torch.arange(self.shape).unsqueeze(0)
-        w_ = w_ * 0.00001 * torch.rand(self.n_heads, 1) + 0.000001 * torch.randn(self.n_heads, 1)
         self.w = torch.nn.Parameter(
-            torch.cat([torch.flip(w_[..., 1:], dims=[-1]), w_], dim=-1).unsqueeze(0),
+            torch.randn(1, self.n_heads, self.w_shape),
             requires_grad=True
         )

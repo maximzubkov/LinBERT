@@ -45,6 +45,18 @@ class FFTBiasBase(BiasBase):
         # z_fft has shape [num_heads, seq_len * 2 - 1, 2], the last two dims belongs to real and img parts
         return torch.rfft(z, 1)
 
+    def _init_bias(self):
+        super()._init_bias()
+        if self.bias_base_type == "full":
+            w_ = torch.arange(self.shape).unsqueeze(0)
+            w_ = w_ * 0.00001 * torch.rand(self.n_heads, 1) + 0.000001 * torch.randn(self.n_heads, 1)
+            w_ = torch.cat([
+                w_[..., -1].unsqueeze(-1),  # w_{N-1}
+                torch.flip(w_[..., 1:], dims=[-1]),  # w_{N-1}, w_{N-2}, ..., w_{1}
+                w_[..., :-1]  # w_{0}, w_{1}, ..., w_{N-2}
+            ], dim=-1).unsqueeze(0)
+            self.w = torch.nn.Parameter(w_, requires_grad=True)
+
 
 class FFTBias(FFTBiasBase):
     def __init__(self, config):
