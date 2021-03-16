@@ -53,18 +53,21 @@ class LinearAttention(Module):
         # [batch_size, k_seq_len, n_heads, p_s]
         k = self.feature_map(k)
 
+        # y equals to numerator value after applying attention
+        # [batch_size, target_seq_len, n_heads, p_s]
+        y = None
+
         if attention_mask is None:  # causal attention
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
             v_ = self.causal_linear(q, k, v)
 
             if self.pos_bias is not None:
                 pbv, z_pb = self.pos_bias(v)
-                z = z + z_pb
-                v_ = v_ + pbv
+                y = pbv
             if head_mask is not None:
                 v_ = v_ * head_mask.view(1, 1, *head_mask.shape, 1)
 
-            return v_ / z.unsqueeze(-1)
+            output = v_ / z.unsqueeze(-1)
         else:
             torch.jit._unwrap_optional(attention_mask)
             k = k * attention_mask.view(*attention_mask.shape, 1, 1)
@@ -76,10 +79,6 @@ class LinearAttention(Module):
             # [batch_size, target_seq_len, n_heads]
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
 
-            # y equals to numerator value after applying attention
-            # [batch_size, target_seq_len, n_heads, p_s]
-            y = None
-
             if self.pos_bias is not None:
                 pbv, z_pb = self.pos_bias(v)
                 y = pbv
@@ -90,9 +89,9 @@ class LinearAttention(Module):
 
             inv_z = 1 / z
             output = torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, inv_z)
-            if y is not None:
-                output = output + y
-            return output
+        if y is not None:
+            output = output + y
+        return output
 
     def recurrent(self, q, k, v, memory=None):
         q = self.feature_map(q)
