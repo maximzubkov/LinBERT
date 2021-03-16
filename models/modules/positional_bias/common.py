@@ -31,6 +31,6 @@ class BiasBase(nn.Module):
         if self.lm:
             ones = torch.ones(self.full_seq_len, self.full_seq_len)
             self.mask = nn.Parameter(
-                torch.tril(ones).unsqueeze(0).unsqueeze(0),
+                torch.tril(ones).unsqueeze(0),
                 requires_grad=False
             )
