@@ -42,7 +42,6 @@ config2 = BertConfig(
 @torch.no_grad()
 def _test(naive_config: BertConfig, fft_config: BertConfig):
     v = torch.rand(batch_size, seq_len, num_heads, embed_dim)
-    offset = torch.rand(batch_size, num_heads)
     fft_pos_bias = PositionalBias(fft_config)
     fft_pos_bias.eval()
 
@@ -51,11 +50,10 @@ def _test(naive_config: BertConfig, fft_config: BertConfig):
 
     naive_pos_bias.bias.w.data = fft_pos_bias.bias.w.data
 
-    for off_ in [None, offset]:
-        ppb_fft, z_pb_fft = fft_pos_bias(v, off_)
-        ppb_orig, z_pb_orig = naive_pos_bias(v, off_)
-        assert torch.allclose(z_pb_orig, z_pb_fft, atol=1e-3), "Z not equal"
-        assert torch.allclose(ppb_orig, ppb_fft, atol=1e-3), "PPB not equal"
+    ppb_fft, z_pb_fft = fft_pos_bias(v)
+    ppb_orig, z_pb_orig = naive_pos_bias(v)
+    assert torch.allclose(z_pb_orig, z_pb_fft, atol=1e-3), "Z not equal"
+    assert torch.allclose(ppb_orig, ppb_fft, atol=1e-3), "PPB not equal"
 
 
 def test_pos_bias_full():
