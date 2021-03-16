@@ -13,8 +13,7 @@ class NaiveBiasBase(BiasBase):
         if self.has_specials:
             w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
         if self.lm:
-            *_, a, b = w_.shape
-            w_ = w_ * torch.tril(torch.ones(a, b)).unsqueeze(0).unsqueeze(0)
+            w_ = w_ * self.mask
         if (len(w_.shape) == 4) and (w_.shape[0] == 1):
             w_ = w_.squeeze()
             w_ = repeat(w_, "h l j -> n h l j", n=batch_size)

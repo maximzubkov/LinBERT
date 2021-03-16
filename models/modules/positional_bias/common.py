@@ -27,3 +27,6 @@ class BiasBase(nn.Module):
             torch.randn(1, self.n_heads, self.w_shape),
             requires_grad=True
         )
+
+        if self.lm:
+            self.mask = torch.tril(torch.ones(self.full_seq_len, self.full_seq_len)).unsqueeze(0).unsqueeze(0)
