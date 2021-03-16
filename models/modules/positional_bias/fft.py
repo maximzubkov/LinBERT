@@ -2,19 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .common import BiasBase
 
-class FFTBiasBase(nn.Module):
+
+class FFTBiasBase(BiasBase):
     def __init__(self, config):
-        super(FFTBiasBase, self).__init__()
-        self.bias_base_type = config.bias_base_type
-        self.feature_map = config.feature_map
-        self.type_ = config.pos_bias_type
-        self.lm = config.lm
-        self.has_specials = config.has_specials
-        self.n_heads = config.num_attention_heads
-        self.full_seq_len = config.max_position_embeddings
-        if self.has_specials:
-            self.full_seq_len = self.full_seq_len - 2
+        super(FFTBiasBase, self).__init__(config)
 
     @staticmethod
     def _complex_mul(x, y):
@@ -24,13 +17,15 @@ class FFTBiasBase(nn.Module):
             x[..., 0] * y[..., 1] + x[..., 1] * y[..., 0]
         ), dim=-1)
 
-    def _compute_z_fft(self, seq_len: int, offset: torch.Tensor):
+    def _process(self, x: torch.Tensor):
+        if self.has_specials:
+            x = F.pad(input=x, pad=[1, 1], mode='constant', value=0)
+        return x
+
+    def _compute_z_fft(self, seq_len: int):
         # [num_heads, seq_len]
         if self.bias_base_type == "full":
-            w_ = self.w[..., self.shape - seq_len: self.shape + seq_len - 1]
-            z = torch.cat([
-                w_[..., 0].unsqueeze(-1), torch.flip(w_[..., 1:], dims=[-1])
-            ], dim=-1)
+            z = self.w[..., self.shape - seq_len: self.shape + seq_len - 1]
         elif self.bias_base_type == "symmetric":
             w_ = self.w[..., :seq_len]
             z = torch.cat([
@@ -40,12 +35,6 @@ class FFTBiasBase(nn.Module):
             ], dim=-1)
         else:
             raise ValueError("Unknown bias base type")
-
-        if offset is not None:
-            z = z - offset.unsqueeze(-1)
-
-        if self.feature_map == "exp":
-            z = torch.exp(z)
 
         if self.lm:
             mask = torch.ones_like(z)
@@ -61,26 +50,14 @@ class FFTBias(FFTBiasBase):
     def __init__(self, config):
         super(FFTBias, self).__init__(config)
         self.shape = self.full_seq_len
-
-        if self.bias_base_type == "full":
-            self.w_shape = 2 * self.shape - 1
-        elif self.bias_base_type == "symmetric":
-            self.w_shape = self.shape
-        else:
-            raise ValueError("Unknown bias base type")
-
-        self.w = torch.nn.Parameter(
-            torch.randn(1, self.n_heads, self.w_shape),
-            requires_grad=True
-        )
-        self.w.data.uniform_(-0.1, 0.1)
+        self._init_bias()
         self.o_ = torch.nn.Parameter(torch.ones(self.shape), requires_grad=False)
 
-    def forward(self, v, offset):
+    def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
         v_ = v[:, 1:-1, :, :] if self.has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
-        z_fft = self._compute_z_fft(seq_len, offset)
+        z_fft = self._compute_z_fft(seq_len)
 
         v_ = v_.permute(0, 3, 2, 1)
 
@@ -90,8 +67,7 @@ class FFTBias(FFTBiasBase):
         v_fft = torch.rfft(v_, 1)
         pbv = torch.irfft(self._complex_mul(v_fft, z_fft.unsqueeze(1)), 1)
         pbv = pbv[..., :seq_len]
-        if self.has_specials:
-            pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
+        pbv = self._process(pbv)
         pbv = pbv.permute(0, 3, 2, 1)
 
         o_ = nn.functional.pad(self.o_[:seq_len], [pad_size, 0])
@@ -99,8 +75,7 @@ class FFTBias(FFTBiasBase):
 
         z_pb = torch.irfft(self._complex_mul(z_fft, o_fft), 1)
         z_pb = z_pb[..., :seq_len]
-        if self.has_specials:
-            z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
+        z_pb = self._process(z_pb)
         z_pb = z_pb.transpose(-2, -1)
         return pbv, z_pb
 
@@ -109,29 +84,17 @@ class FFTBias2d(FFTBiasBase):
     def __init__(self, config):
         super(FFTBias2d, self).__init__(config)
         self.shape = int(self.full_seq_len ** 0.5)
-
-        if self.bias_base_type == "full":
-            self.w_shape = 2 * self.shape - 1
-        elif self.bias_base_type == "symmetric":
-            self.w_shape = self.shape
-        else:
-            raise ValueError("Unknown bias base type")
-
-        self.w = torch.nn.Parameter(
-            torch.randn(1, self.n_heads, self.w_shape),
-            requires_grad=True
-        )
-        self.w.data.uniform_(-0.1, 0.1)
+        self._init_bias()
 
         self.o_ = torch.ones(self.shape)
         self.o_ = nn.functional.pad(self.o_, [self.shape - 1, 0])
         self.o_fft = torch.nn.Parameter(torch.rfft(self.o_, 1), requires_grad=False)
 
-    def forward(self, v, offset):
+    def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
         v_ = v[:, 1:-1, :, :] if self.has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
-        z_fft = self._compute_z_fft(self.shape, offset)
+        z_fft = self._compute_z_fft(self.shape)
 
         v_ = v_.transpose(-3, -1).reshape(batch_size, emb_dim, n_heads, self.shape, self.shape).transpose(-3, -2)
 
@@ -148,8 +111,7 @@ class FFTBias2d(FFTBiasBase):
 
         pbv = RxV_m.unsqueeze(-2) + RxU_m.unsqueeze(-1)
         pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len)
-        if self.has_specials:
-            pbv = F.pad(input=pbv, pad=[1, 1], mode='constant', value=0)
+        pbv = self._process(pbv)
         pbv = pbv.permute(0, 3, 2, 1)
 
         z_pb = torch.irfft(self._complex_mul(self.o_fft, z_fft), 1)
@@ -157,8 +119,7 @@ class FFTBias2d(FFTBiasBase):
 
         z_pb = z_pb.unsqueeze(-2) + z_pb.unsqueeze(-1)
         z_pb = z_pb.reshape(-1, n_heads, self.shape * self.shape)
-        if self.has_specials:
-            z_pb = F.pad(input=z_pb, pad=[1, 1], mode='constant', value=0)
+        z_pb = self._process(z_pb)
         z_pb = z_pb.transpose(-2, -1)
 
         return pbv, z_pb

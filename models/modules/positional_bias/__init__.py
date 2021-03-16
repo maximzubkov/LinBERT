@@ -16,5 +16,5 @@ class PositionalBias(nn.Module):
         elif config.pos_bias_type == "fft_2d":
             self.bias = FFTBias2d(config=config)
 
-    def forward(self, v, offset=None):
-        return self.bias(v, offset)
+    def forward(self, v):
+        return self.bias(v)

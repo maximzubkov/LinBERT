@@ -1,21 +1,13 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from einops import repeat
 
+from .common import BiasBase
 
-class NaiveBiasBase(nn.Module):
+
+class NaiveBiasBase(BiasBase):
     def __init__(self, config):
-        super(NaiveBiasBase, self).__init__()
-        self.bias_base_type = config.bias_base_type
-        self.feature_map = config.feature_map
-        self.type_ = config.pos_bias_type
-        self.lm = config.lm
-        self.has_specials = config.has_specials
-        self.n_heads = config.num_attention_heads
-        self.full_seq_len = config.max_position_embeddings
-        if self.has_specials:
-            self.full_seq_len = self.full_seq_len - 2
+        super(NaiveBiasBase, self).__init__(config)
 
     def _process(self, w_: torch.Tensor, batch_size: int):
         if self.has_specials:
@@ -28,13 +20,7 @@ class NaiveBiasBase(nn.Module):
             w_ = repeat(w_, "h l j -> n h l j", n=batch_size)
         return w_
 
-    def _construct_bias(self, w_: torch.Tensor, seq_len: int, offset: torch.Tensor):
-        if offset is not None:
-            w_ = w_ - offset.unsqueeze(-1)
-
-        if self.feature_map == "exp":
-            w_ = torch.exp(w_)
-
+    def _construct_bias(self, w_: torch.Tensor, seq_len: int):
         if self.bias_base_type == "full":
             bias = torch.cat([
                 w_[..., seq_len - i - 1: 2 * seq_len - i - 1].unsqueeze(-2)
@@ -56,21 +42,9 @@ class NaiveBias(NaiveBiasBase):
     def __init__(self, config):
         super(NaiveBias, self).__init__(config)
         self.shape = self.full_seq_len
+        self._init_bias()
 
-        if self.bias_base_type == "full":
-            self.w_shape = 2 * self.shape - 1
-        elif self.bias_base_type == "symmetric":
-            self.w_shape = self.shape
-        else:
-            raise ValueError("Unknown bias base type")
-
-        self.w = torch.nn.Parameter(
-            torch.randn(1, self.n_heads, self.w_shape),
-            requires_grad=True
-        )
-        self.w.data.uniform_(-0.1, 0.1)
-
-    def forward(self, v, offset):
+    def forward(self, v):
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
         if self.has_specials:
@@ -83,7 +57,7 @@ class NaiveBias(NaiveBiasBase):
         else:
             raise ValueError("Unknown bias base type")
 
-        bias = self._construct_bias(w_, seq_len, offset)
+        bias = self._construct_bias(w_, seq_len)
         bias = self._process(bias, batch_size)
         z_pb = bias.sum(-1).transpose(-2, -1).unsqueeze(0)
         pbv = torch.einsum("nlhd,nhlj->njhd", v, bias.transpose(-2, -1))
@@ -94,24 +68,12 @@ class NaiveBias2d(NaiveBiasBase):
     def __init__(self, config):
         super(NaiveBias2d, self).__init__(config)
         self.shape = int(self.full_seq_len ** 0.5)
+        self._init_bias()
 
-        if self.bias_base_type == "full":
-            self.w_shape = 2 * self.shape - 1
-        elif self.bias_base_type == "symmetric":
-            self.w_shape = self.shape
-        else:
-            raise ValueError("Unknown bias base type")
-
-        self.w = torch.nn.Parameter(
-            torch.randn(1, self.n_heads, self.w_shape),
-            requires_grad=True
-        )
-        self.w.data.uniform_(-0.1, 0.1)
-
-    def forward(self, v, offset):
+    def forward(self, v):
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
-        bias = self._construct_bias(self.w, self.shape, offset)
+        bias = self._construct_bias(self.w, self.shape)
         x_ = bias.unsqueeze(-3).unsqueeze(-2)
         y_ = bias.unsqueeze(-2).unsqueeze(-1)
         w_ = x_ + y_

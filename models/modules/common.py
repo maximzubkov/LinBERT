@@ -12,9 +12,7 @@ def elu_feature_map(x):
 
 
 def exp_feature_map(x):
-    mean = x.mean(-3).mean(-1)
-    out = x - mean.unsqueeze(-1).unsqueeze(-3)
-    return torch.exp(out)
+    return torch.exp(x)
 
 
 def relu_feature_map(x):
