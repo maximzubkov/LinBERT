@@ -38,6 +38,11 @@ class LinearAttention(Module):
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
+        if self.feature_map_name == "exp":
+            offset = q.mean(-3).mean(-1) + k.mean(-3).mean(-1)
+            offset = offset.unsqueeze(-1).unsqueeze(-3)
+            q = q - offset
+            k = k - offset
         if self.bn_q is not None:
             q = self.bn_q(q.transpose(2, 1)).transpose(2, 1)
         # [batch_size, q_seq_len, n_heads, p_s]
