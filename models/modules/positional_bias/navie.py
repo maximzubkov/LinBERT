@@ -17,6 +17,17 @@ class NaiveBiasBase(nn.Module):
         if self.has_specials:
             self.full_seq_len = self.full_seq_len - 2
 
+    def _process(self, w_: torch.Tensor, batch_size: int):
+        if self.has_specials:
+            w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
+        if self.lm:
+            *_, a, b = w_.shape
+            w_ = w_ * torch.tril(torch.ones(a, b)).unsqueeze(0).unsqueeze(0)
+        if (len(w_.shape) == 4) and (w_.shape[0] == 1):
+            w_ = w_.squeeze()
+            w_ = repeat(w_, "h l j -> n h l j", n=batch_size)
+        return w_
+
     def _construct_bias(self, w_: torch.Tensor, seq_len: int, offset: torch.Tensor):
         if offset is not None:
             w_ = w_ - offset.unsqueeze(-1)
@@ -61,8 +72,9 @@ class NaiveBias(NaiveBiasBase):
 
     def forward(self, v, offset):
         # [batch_size, seq_len, seq_len]
-        v_ = v[:, 1:-1, :, :] if self.has_specials else v
-        batch_size, seq_len, n_heads, emb_dim = v_.shape
+        batch_size, seq_len, n_heads, emb_dim = v.shape
+        if self.has_specials:
+            seq_len -= 2
 
         if self.bias_base_type == "full":
             w_ = self.w[..., self.shape - seq_len: self.shape + seq_len - 1]
@@ -72,13 +84,7 @@ class NaiveBias(NaiveBiasBase):
             raise ValueError("Unknown bias base type")
 
         bias = self._construct_bias(w_, seq_len, offset)
-        if self.has_specials:
-            bias = F.pad(input=bias, pad=[1, 1, 1, 1], mode='constant', value=0)
-        if self.lm:
-            bias = bias * torch.tril(torch.ones_like(bias))
-        if (len(bias.shape) == 4) and (bias.shape[0] == 1):
-            bias = bias.squeeze()
-            bias = repeat(bias, "h l j -> n h l j", n=v.shape[0])
+        bias = self._process(bias, batch_size)
         z_pb = bias.sum(-1).transpose(-2, -1).unsqueeze(0)
         pbv = torch.einsum("nlhd,nhlj->njhd", v, bias.transpose(-2, -1))
         return pbv, z_pb
@@ -105,21 +111,14 @@ class NaiveBias2d(NaiveBiasBase):
     def forward(self, v, offset):
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
-        w_ = self.w
-        bias = self._construct_bias(w_, self.shape, offset)
+        bias = self._construct_bias(self.w, self.shape, offset)
         x_ = bias.unsqueeze(-3).unsqueeze(-2)
         y_ = bias.unsqueeze(-2).unsqueeze(-1)
         w_ = x_ + y_
         w_batch_shape, *_ = w_.shape
         w_ = w_.reshape(w_batch_shape, n_heads, self.shape, self.shape, -1)
         w_ = w_.reshape(w_batch_shape, n_heads, -1, self.shape ** 2)
-        if self.has_specials:
-            w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
-        if self.lm:
-            w_ = w_ * torch.tril(torch.ones(self.shape ** 2, self.shape ** 2)).unsqueeze(0).unsqueeze(0)
-        if w_batch_shape == 1:
-            w_ = w_.squeeze()
-            w_ = repeat(w_, 'h l j -> n h l j', n=v.shape[0])
+        w_ = self._process(w_, batch_size)
         z_pb = w_.sum(-1).transpose(-2, -1).unsqueeze(0)
         pbv = torch.einsum("nlhd,nhlj->njhd", v, w_.transpose(-2, -1))
         return pbv, z_pb
