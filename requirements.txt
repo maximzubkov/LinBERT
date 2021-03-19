@@ -16,5 +16,5 @@ pytorch-lightning==1.1.8
 vit-pytorch==0.6.7
 einops~=0.3.0
 PyYAML~=5.3
-Pillow==7.2.0
+Pillow==8.1.1
 scikit_learn==0.23.2
