@@ -22,9 +22,8 @@ class NaiveBiasBase(BiasBase):
     def _construct_bias(self, w_: torch.Tensor, seq_len: int):
         if self.bias_base_type == "full":
             w_ = torch.cat([
-                w_[..., -1].unsqueeze(-1),  # w_{N-1}
-                torch.flip(w_[..., 1:], dims=[-1]),  # w_{N-1}, w_{N-2}, ..., w_{1}
-                w_[..., :-1]  # w_{0}, w_{1}, ..., w_{N-2}
+                w_[..., 1:],  # w_{2N-1}, w_{2N-2}, ..., w_{1}
+                w_[..., 0].unsqueeze(-1),  # w_{0}
             ], dim=-1)
         elif self.bias_base_type == "symmetric":
             w_ = torch.cat([
@@ -63,6 +62,7 @@ class NaiveBias(NaiveBiasBase):
         bias = self._construct_bias(w_, seq_len)
         bias = self._process(bias, batch_size)
         z_pb = bias.sum(-1).transpose(-2, -1)
+
         pbv = torch.einsum("nlhd,nhlj->njhd", v, bias.transpose(-2, -1))
         return pbv, z_pb
 
