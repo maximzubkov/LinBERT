@@ -3,6 +3,8 @@ from transformers import BertConfig
 
 from models.modules import PositionalBias
 
+torch.manual_seed(9)
+
 seq_len = 28 * 28 + 2
 num_heads = 10
 batch_size = 16
@@ -48,7 +50,9 @@ def _test(naive_config: BertConfig, fft_config: BertConfig):
     naive_pos_bias = PositionalBias(naive_config)
     naive_pos_bias.eval()
 
-    naive_pos_bias.bias.w.data = fft_pos_bias.bias.w.data
+    w_ = torch.rand(1, num_heads, naive_pos_bias.bias.w_shape)
+    naive_pos_bias.bias.w.data = w_
+    fft_pos_bias.bias.w.data = w_
 
     ppb_fft, z_pb_fft = fft_pos_bias(v)
     ppb_orig, z_pb_orig = naive_pos_bias(v)
