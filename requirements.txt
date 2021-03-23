@@ -13,7 +13,7 @@ tqdm~=4.49.0
 dataclasses~=0.6
 torchvision~=0.7.0
 pytorch-lightning==1.1.8
-vit-pytorch==0.6.7
+vit-pytorch==0.9.3
 einops~=0.3.0
 PyYAML~=5.3
 Pillow==7.2.0
