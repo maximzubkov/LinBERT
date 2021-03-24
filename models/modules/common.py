@@ -7,20 +7,6 @@ def transpose_for_scores(x, num_attention_heads, attention_head_size):
     return x.view(*new_x_shape)
 
 
-def elu_feature_map(x):
-    return torch.nn.functional.elu(x) + 1
-
-
-def exp_feature_map(x):
-    mean = x.mean(-3).mean(-1)
-    out = x - mean.unsqueeze(-1).unsqueeze(-3)
-    return torch.exp(out)
-
-
-def relu_feature_map(x):
-    return torch.nn.functional.leaky_relu(x)
-
-
 def compute_mask(x: torch.Tensor):
     attn_mask = torch.full(
         (len(x), len(x)), -float("Inf"), device=x.device, dtype=x.dtype

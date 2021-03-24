@@ -10,7 +10,12 @@ import torch
 import torch.nn as nn
 from torch.nn import Module
 
-from models.modules.common import elu_feature_map, relu_feature_map, exp_feature_map
+from models.modules.feature_maps import (
+    elu_feature_map,
+    exp_feature_map,
+    dpfp_feature_map,
+    Favor
+)
 from models.modules.fast_transformers.causal_product import causal_dot_product
 from models.modules.positional_attention import PositionalAttention
 from models.modules.positional_bias import PositionalBias
@@ -23,10 +28,12 @@ class LinearAttention(Module):
         self.feature_map_name = config.feature_map
         if config.feature_map == "elu":
             self.feature_map = elu_feature_map
-        elif config.feature_map == "relu":
-            self.feature_map = relu_feature_map
         elif config.feature_map == "exp":
             self.feature_map = exp_feature_map
+        elif config.feature_map == "dpfp":
+            self.feature_map = dpfp_feature_map
+        elif config.feature_map == "favor":
+            self.feature_map = Favor(config.hidden_size)
         else:
             raise ValueError("Invalid feature map specified")
         self.eps = eps
