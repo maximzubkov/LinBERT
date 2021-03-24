@@ -37,15 +37,13 @@ class FFTBiasBase(BiasBase):
         # z_fft has shape [num_heads, seq_len * 2 - 1, 2], the last two dims belongs to real and img parts
         return torch.fft.rfft(z)
 
-    def _init_bias(self):
-        super()._init_bias()
-
 
 class FFTBias(FFTBiasBase):
     def __init__(self, config):
         super(FFTBias, self).__init__(config)
         self.shape = self.full_seq_len
         self._init_bias()
+
         self.o_ = torch.nn.Parameter(torch.ones(self.shape), requires_grad=False)
 
     def forward(self, v):
