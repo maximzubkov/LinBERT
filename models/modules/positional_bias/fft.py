@@ -82,7 +82,7 @@ class FFTBias2d(FFTBiasBase):
         self._init_bias()
 
         self.o_ = torch.ones(self.shape)
-        self.o_ = nn.functional.pad(self.o_, [self.shape - 1, 0])
+        self.o_ = torch.nn.Parameter(nn.functional.pad(self.o_, [self.shape - 1, 0]), requires_grad=False)
 
     def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
