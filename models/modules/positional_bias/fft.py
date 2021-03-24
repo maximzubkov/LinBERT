@@ -85,7 +85,6 @@ class FFTBias2d(FFTBiasBase):
 
         self.o_ = torch.ones(self.shape)
         self.o_ = nn.functional.pad(self.o_, [self.shape - 1, 0])
-        self.o_fft = torch.nn.Parameter(torch.fft.rfft(self.o_), requires_grad=False)
 
     def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
@@ -112,7 +111,8 @@ class FFTBias2d(FFTBiasBase):
         pbv = self._process(pbv)
         pbv = pbv.permute(0, 3, 2, 1)
 
-        z_pb = torch.fft.irfft(self.o_fft * z_fft, n=n)
+        o_fft = torch.fft.rfft(self.o_)
+        z_pb = torch.fft.irfft(o_fft * z_fft, n=n)
         z_pb = z_pb[..., :self.shape] * self.shape
 
         z_pb = z_pb.unsqueeze(-2) + z_pb.unsqueeze(-1)
