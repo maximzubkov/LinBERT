@@ -9,9 +9,9 @@ command:
 method: bayes
 metric:
   goal: minimize
-  name: val_loss
+  name: eval_loss
 parameters:
   learning_rate:
-    max: 0.001
+    max: 0.0003
     min: 0.000001
     distribution: uniform
