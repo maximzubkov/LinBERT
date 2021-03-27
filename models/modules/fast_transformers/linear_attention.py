@@ -46,11 +46,10 @@ class LinearAttention(Module):
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.feature_map_name == "exp":
-            # [batch_size, num_heads]
-            offset = (q + k).mean(-3).mean(-1)
-        else:
-            offset = None
-
+            offset = q.mean(-3).mean(-1) + k.mean(-3).mean(-1)
+            offset = offset.unsqueeze(-1).unsqueeze(-3)
+            q = q - offset
+            k = k - offset
         if self.bn_q is not None:
             q = self.bn_q(q.transpose(2, 1)).transpose(2, 1)
         # [batch_size, q_seq_len, n_heads, p_s]
@@ -61,18 +60,21 @@ class LinearAttention(Module):
         # [batch_size, k_seq_len, n_heads, p_s]
         k = self.feature_map(k)
 
+        # y equals to numerator value after applying attention
+        # [batch_size, target_seq_len, n_heads, p_s]
+        y = None
+
         if attention_mask is None:  # causal attention
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
             v_ = self.causal_linear(q, k, v)
 
             if self.pos_bias is not None:
-                pbv, z_pb = self.pos_bias(v, offset)
-                z = z + z_pb
-                v_ = v_ + pbv
+                pbv, z_pb = self.pos_bias(v)
+                y = pbv
             if head_mask is not None:
                 v_ = v_ * head_mask.view(1, 1, *head_mask.shape, 1)
 
-            return v_ / z.unsqueeze(-1)
+            output = v_ / z.unsqueeze(-1)
         else:
             torch.jit._unwrap_optional(attention_mask)
             k = k * attention_mask.view(*attention_mask.shape, 1, 1)
@@ -84,25 +86,19 @@ class LinearAttention(Module):
             # [batch_size, target_seq_len, n_heads]
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
 
-            # y equals to numerator value after applying attention
-            # [batch_size, target_seq_len, n_heads, p_s]
-            y = None
-
             if self.pos_bias is not None:
-                pbv, z_pb = self.pos_bias(v, offset)
-                z = z + z_pb
+                pbv, z_pb = self.pos_bias(v)
                 y = pbv
 
             if self.pos_attention is not None:
                 ppv, z_pp = self.pos_attention(q, v, attention_mask, head_mask)
-                z = z + z_pp
                 y = y + ppv if y is not None else ppv
 
             inv_z = 1 / z
             output = torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, inv_z)
-            if y is not None:
-                output = output + torch.einsum("nlhm,nlh->nlhm", y, inv_z)
-            return output
+        if y is not None:
+            output = output + y
+        return output
 
     def recurrent(self, q, k, v, memory=None):
         q = self.feature_map(q)
