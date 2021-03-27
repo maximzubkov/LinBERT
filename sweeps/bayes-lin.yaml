@@ -1,0 +1,17 @@
+command:
+  - python
+  - train.py
+  - --dataset=mnist
+  - --is_linear
+  - --x_shape=28
+  - --y_shape=28
+  - ${args}
+method: bayes
+metric:
+  goal: minimize
+  name: val_loss
+parameters:
+  learning_rate:
+    max: 0.001
+    min: 0.000001
+    distribution: uniform
