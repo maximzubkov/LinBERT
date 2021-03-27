@@ -36,6 +36,10 @@ class LinearAttention(Module):
         self.bn_k = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
         self.bn_q = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
+        if config.pos_bias_type is not None:
+            self.pos_bias_lambda = torch.nn.Parameter(
+                torch.zeros(1, 1, config.num_attention_heads, 1), requires_grad=True
+            )
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.feature_map_name == "exp":
@@ -90,7 +94,8 @@ class LinearAttention(Module):
             inv_z = 1 / z
             output = torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, inv_z)
         if y is not None:
-            output = output + y
+            pb_prob = torch.nn.functional.sigmoid(self.pos_bias_lambda)
+            output = (1 - pb_prob) * output + pb_prob * y
         return output
 
     def recurrent(self, q, k, v, memory=None):
