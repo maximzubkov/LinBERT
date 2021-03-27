@@ -50,41 +50,15 @@ class FeatureMap(Module):
         return inner
 
 
-class ActivationFunctionFeatureMap(FeatureMap):
-    """Define a feature map that is simply an element-wise activation
-    function."""
-    def __init__(self, query_dims, activation_function):
-        super().__init__(query_dims)
-        self.activation_function = activation_function
-
-    def new_feature_map(self, device):
-        return
-
-    def forward(self, x):
-        return self.activation_function(x)
+def elu_feature_map(x):
+    return torch.nn.functional.elu(x) + 1
 
 
-elu_feature_map = ActivationFunctionFeatureMap.factory(
-    lambda x: torch.nn.functional.elu(x) + 1
-)
-
-exp_feature_map = ActivationFunctionFeatureMap.factory(
-    lambda x: exp_(x)
-)
+def exp_feature_map(x):
+    return torch.exp(x)
 
 
-def exp_(x):
-    mean = x.mean(-3).mean(-1)
-    out = x - mean.unsqueeze(-1).unsqueeze(-3)
-    return torch.exp(out)
-
-
-dpfp_feature_map = ActivationFunctionFeatureMap.factory(
-    lambda x: dpfp_(x)
-)
-
-
-def dpfp_(x, nu=1):
+def dpfp_feature_map(x, nu=1):
     x_ = torch.cat([
       torch.nn.functional.relu(x), torch.nn.functional.relu(-x)
     ], dim=-1)
