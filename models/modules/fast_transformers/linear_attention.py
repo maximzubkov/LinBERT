@@ -26,6 +26,10 @@ class LinearAttention(Module):
         super(LinearAttention, self).__init__()
         self.pos_attention = pos_attention
         self.feature_map_name = config.feature_map
+
+        attn_head_size = config.hidden_size // config.num_attention_heads
+        max_seq_len = config.max_position_embeddings
+
         if config.feature_map == "elu":
             self.feature_map = elu_feature_map
         elif config.feature_map == "exp":
@@ -33,13 +37,11 @@ class LinearAttention(Module):
         elif config.feature_map == "dpfp":
             self.feature_map = dpfp_feature_map
         elif config.feature_map == "favor":
-            self.feature_map = Favor(config.hidden_size)
+            self.feature_map = Favor(attn_head_size)
         else:
             raise ValueError("Invalid feature map specified")
         self.eps = eps
 
-        attn_head_size = config.hidden_size // config.num_attention_heads
-        max_seq_len = config.max_position_embeddings
         self.bn_k = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
         self.bn_q = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
