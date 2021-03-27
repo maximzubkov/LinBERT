@@ -15,6 +15,7 @@ def pf_config(
         model_config: ModelConfig,
         x_shape: int = 30,
         y_shape: int = 30,
+        lr: float = 1e-4,
 ) -> Tuple[BertConfig, TrainingArguments]:
     if is_test:
         training_args = TrainingArguments(
@@ -30,6 +31,7 @@ def pf_config(
             do_eval=True,
             eval_steps=50,
             logging_steps=50,
+            learning_rate=lr,
             save_total_limit=2,
         )
 
@@ -60,7 +62,7 @@ def pf_config(
             do_train=True,
             do_eval=True,
             eval_steps=300,
-            learning_rate=1e-4,
+            learning_rate=lr,
             logging_steps=50,
             save_total_limit=2,
         )
