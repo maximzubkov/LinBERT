@@ -36,7 +36,7 @@ def test_lm_naive_2d():
     pos_bias.eval()
     pos_bias.bias.w.data = repeat(torch.ones(2 * int(seq_len ** 0.5) - 1), 's -> h s', h=num_heads).unsqueeze(0)
 
-    ppb, z_pb = pos_bias(v, None)
+    ppb, z_pb = pos_bias(v)
     assert torch.allclose(ppb, cumsum, atol=1e-3), "Cumsum and new v are not equal"
 
 
@@ -48,5 +48,5 @@ def test_lm_naive():
     pos_bias.eval()
     pos_bias.bias.w.data = repeat(torch.ones(2 * seq_len - 1), 's -> h s', h=num_heads).unsqueeze(0)
 
-    ppb, z_pb = pos_bias(v, None)
+    ppb, z_pb = pos_bias(v)
     assert torch.allclose(ppb, cumsum, atol=1e-3), "Cumsum and new v are not equal"
