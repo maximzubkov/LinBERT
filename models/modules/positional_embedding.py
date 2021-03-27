@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers.modeling_bert import BertEmbeddings
+from transformers.models.bert.modeling_bert import BertEmbeddings
 
 
 class Embedding2D(nn.Module):

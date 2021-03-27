@@ -3,6 +3,7 @@ from os.path import join
 
 from transformers import BertTokenizerFast
 from transformers import Trainer, DataCollatorWithPadding
+from transformers import EarlyStoppingCallback
 
 from configs import yelp_config, pf_config, ModelConfig
 from dataset import get_dataset
@@ -88,6 +89,9 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
+        callbacks=[
+            EarlyStoppingCallback()
+        ],
         data_collator=DataCollatorWithPadding(
             tokenizer=tokenizer,
             padding="longest",
