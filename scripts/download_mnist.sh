@@ -26,24 +26,10 @@ then
   mkdir $DATA_DIR
 fi
 
-if [ ! -f "$DATA_DIR/train-images-idx3-ubyte.gz" ]
+if [ ! -f "$DATA_DIR/mnist.zip" ]
 then
-  wget -c http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz -P $DATA_DIR/
-fi
-
-if [ ! -f "$DATA_DIR/train-labels-idx1-ubyte.gz" ]
-then
-  wget -c http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz -P $DATA_DIR/
-fi
-
-if [ ! -f "$DATA_DIR/t10k-images-idx3-ubyte.gz" ]
-then
-  wget -c http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz -P $DATA_DIR/
-fi
-
-if [ ! -f "$DATA_DIR/t10k-labels-idx1-ubyte.gz" ]
-then
-  wget -c http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz -P $DATA_DIR/
+  wget -c https://data.deepai.org/mnist.zip -P $DATA_DIR/
+  unzip "$DATA_DIR/mnist.zip" -d $DATA_DIR
 fi
 
 if [ ! -d "$DATA_DIR/mnist" ]
