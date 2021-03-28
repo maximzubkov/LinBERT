@@ -90,7 +90,7 @@ def train(
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
         callbacks=[
-            EarlyStoppingCallback(early_stopping_patience=2, early_stopping_threshold=0.001)
+            EarlyStoppingCallback(early_stopping_patience=4, early_stopping_threshold=0.0001)
         ],
         data_collator=DataCollatorWithPadding(
             tokenizer=tokenizer,

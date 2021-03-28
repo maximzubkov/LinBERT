@@ -9,8 +9,29 @@ command:
   - ${args}
 method: bayes
 metric:
-  goal: minimize
-  name: eval/loss
+  goal: maximize
+  name: eval/f1
 parameters:
   learning_rate:
-    values: [3e-4, 2e-4, 1e-4, 9e-5, 8e-5, 7e-5, 6e-5, 5e-5, 4e-5, 3e-5, 2e-5, 1e-5]
+    values: [
+        100e-6,
+        95e-6,
+        90e-6,
+        85e-6,
+        80e-6,
+        75e-6,
+        70e-6,
+        65e-6,
+        60e-6,
+        55e-6,
+        50e-6,
+        45e-6,
+        40e-6,
+        35e-6,
+        30e-6,
+        25e-6,
+        20e-6,
+        15e-6,
+        10e-6,
+        5e-6
+    ]
