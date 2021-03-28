@@ -5,13 +5,12 @@ command:
   - --is_linear
   - --x_shape=28
   - --y_shape=28
+  - --seed=9
   - ${args}
 method: bayes
 metric:
   goal: minimize
-  name: eval_loss
+  name: eval/loss
 parameters:
   learning_rate:
-    max: 0.0003
-    min: 0.000001
-    distribution: uniform
+    values: [3e-4, 2e-4, 1e-4, 9e-5, 8e-5, 7e-5, 6e-5, 5e-5, 4e-5, 3e-5, 2e-5, 1e-5]

@@ -90,7 +90,7 @@ def train(
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
         callbacks=[
-            EarlyStoppingCallback()
+            EarlyStoppingCallback(early_stopping_patience=2, early_stopping_threshold=0.001)
         ],
         data_collator=DataCollatorWithPadding(
             tokenizer=tokenizer,
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--y_shape", type=int, default=None)
     arg_parser.add_argument("--learning_rate", type=float, default=1e-4)
 
-    model_config = parse_model_config(arg_parser)
+    model_config_ = parse_model_config(arg_parser)
     args = arg_parser.parse_args()
 
     train(
@@ -127,5 +127,5 @@ if __name__ == "__main__":
         x_shape=args.x_shape,
         y_shape=args.y_shape,
         lr=args.learning_rate,
-        model_config=model_config,
+        model_config=model_config_,
     )
