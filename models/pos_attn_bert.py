@@ -57,8 +57,6 @@ class PosAttnBertSelfAttention(BertSelfAttention):
 
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
-        if self.pos_bias is not None:
-            attention_probs = attention_probs + self.pos_bias(value_layer)
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
@@ -71,6 +69,11 @@ class PosAttnBertSelfAttention(BertSelfAttention):
         context_layer = torch.matmul(attention_probs, value_layer)
 
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
+
+        if self.pos_bias is not None:
+            pbv, z_pb = self.pos_bias(value_layer.transpose(-2, -3))
+            context_layer = context_layer + pbv
+
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
 
