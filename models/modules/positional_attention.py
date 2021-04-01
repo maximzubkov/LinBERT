@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 
-from .common import elu_feature_map, transpose_for_scores
+from .feature_maps import elu_feature_map
+from .common import transpose_for_scores
 
 
 class PositionalAttention(nn.Module):
