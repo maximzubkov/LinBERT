@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers import BertModel
-from transformers.modeling_bert import BertSelfAttention
+from transformers.models.bert.modeling_bert import BertSelfAttention
 
 from models.modules import LinPositionalAttention
 from models.modules.common import transpose_for_scores
@@ -23,6 +23,7 @@ class LinBertSelfAttention(BertSelfAttention):
             encoder_hidden_states=None,
             encoder_attention_mask=None,
             output_attentions=False,
+            past_key_value=None,
     ):
         mixed_query_layer = self.query(hidden_states)
 

@@ -3,6 +3,7 @@ from os.path import join
 
 from transformers import BertTokenizerFast
 from transformers import Trainer, DataCollatorWithPadding
+from transformers import EarlyStoppingCallback
 
 from configs import yelp_config, pf_config, ModelConfig
 from dataset import get_dataset
@@ -23,6 +24,7 @@ def train(
         max_seq_len: int = None,
         x_shape: int = None,
         y_shape: int = None,
+        lr: float = 1e-4
 ):
     set_seed_(seed)
 
@@ -38,6 +40,7 @@ def train(
             is_test=is_test,
             max_seq_len=max_seq_len,
             vocab_size=vocab_size,
+            lr=lr,
             model_config=model_config
         )
     elif dataset_name in img_datasets:
@@ -52,6 +55,7 @@ def train(
             x_shape=x_shape,
             y_shape=y_shape,
             vocab_size=vocab_size,
+            lr=lr,
             model_config=model_config
         )
     else:
@@ -85,6 +89,9 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
+        callbacks=[
+            EarlyStoppingCallback(early_stopping_patience=4, early_stopping_threshold=0.0001)
+        ],
         data_collator=DataCollatorWithPadding(
             tokenizer=tokenizer,
             padding="longest",
@@ -107,8 +114,9 @@ if __name__ == "__main__":
     arg_parser.add_argument("--max_seq_len", type=int, default=None)
     arg_parser.add_argument("--x_shape", type=int, default=None)
     arg_parser.add_argument("--y_shape", type=int, default=None)
+    arg_parser.add_argument("--learning_rate", type=float, default=1e-4)
 
-    model_config = parse_model_config(arg_parser)
+    model_config_ = parse_model_config(arg_parser)
     args = arg_parser.parse_args()
 
     train(
@@ -118,5 +126,6 @@ if __name__ == "__main__":
         max_seq_len=args.max_seq_len,
         x_shape=args.x_shape,
         y_shape=args.y_shape,
-        model_config=model_config
+        lr=args.learning_rate,
+        model_config=model_config_,
     )

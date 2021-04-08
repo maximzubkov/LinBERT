@@ -14,6 +14,7 @@ def yelp_config(
         is_test: bool,
         model_config: ModelConfig,
         vocab_size: int,
+        lr: float = 1e-4,
         run_name: str = "default_yelp",
 ) -> Tuple[BertConfig, TrainingArguments]:
     if is_test:
@@ -23,6 +24,7 @@ def yelp_config(
             num_train_epochs=2,
             per_device_train_batch_size=5,
             per_device_eval_batch_size=5,
+            load_best_model_at_end=True,
             evaluation_strategy="steps",
             save_steps=10_000,
             seed=seed,
@@ -30,6 +32,7 @@ def yelp_config(
             do_eval=True,
             eval_steps=50,
             logging_steps=50,
+            learning_rate=lr,
             save_total_limit=2,
             run_name=run_name
         )
@@ -53,6 +56,7 @@ def yelp_config(
             num_train_epochs=2,
             per_device_train_batch_size=32,
             per_device_eval_batch_size=32,
+            load_best_model_at_end=True,
             evaluation_strategy="steps",
             save_steps=10_000,
             seed=seed,
@@ -60,6 +64,7 @@ def yelp_config(
             do_eval=True,
             eval_steps=200,
             logging_steps=50,
+            learning_rate=lr,
             save_total_limit=2,
             run_name=run_name
         )

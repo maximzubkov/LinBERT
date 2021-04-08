@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 from transformers import BertModel
-from transformers.modeling_bert import BertSelfAttention
+from transformers.models.bert.modeling_bert import BertSelfAttention
 
 from models.modules import PositionalAttention
 from models.modules.positional_bias import PositionalBias
@@ -24,6 +24,7 @@ class PosAttnBertSelfAttention(BertSelfAttention):
         encoder_hidden_states=None,
         encoder_attention_mask=None,
         output_attentions=False,
+        past_key_value=None,
     ):
         mixed_query_layer = self.query(hidden_states)
 
