@@ -40,6 +40,7 @@ def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
     arg_parser.add_argument("--bias_base_type", choices=["full", "symmetric"], default=None)
     arg_parser.add_argument("--alpha", type=float, default=0.00001)
     arg_parser.add_argument("--beta", type=float, default=0.000001)
+    arg_parser.add_argument("--lamb", type=float, default=2.)
     args = arg_parser.parse_args()
 
     return ModelConfig(
@@ -51,5 +52,6 @@ def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
         pos_bias_type=args.pos_bias_type,
         bias_base_type=args.bias_base_type,
         alpha=args.alpha,
-        beta=args.beta
+        beta=args.beta,
+        lambda_=args.lamb
     )

@@ -15,6 +15,10 @@ metric:
   goal: maximize
   name: eval/f1
 parameters:
+  lamb:
+    distribution: uniform
+    min: -3
+    max: 3
   alpha:
     distribution: uniform
     min: -1e-1

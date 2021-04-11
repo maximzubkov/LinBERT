@@ -46,8 +46,9 @@ class LinearAttention(Module):
         self.bn_q = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
         if config.pos_bias_type is not None:
+            self.lambda_ = config.lambda_
             self.pos_bias_lambda = torch.nn.Parameter(
-                1000 * torch.zeros(1, 1, config.num_attention_heads, 1), requires_grad=True
+                self.lambda_ * torch.ones(1, 1, config.num_attention_heads, 1), requires_grad=True
             )
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):

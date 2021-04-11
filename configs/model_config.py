@@ -14,3 +14,4 @@ class ModelConfig:
     has_specials: bool = True
     alpha: float = 0.00001
     beta: float = 0.000001
+    lambda_: float = 2
