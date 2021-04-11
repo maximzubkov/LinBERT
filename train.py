@@ -12,7 +12,7 @@ from utils import set_seed_, compute_metrics, parse_model_config
 
 data_path = "data"
 
-img_datasets = ["pf_6_full", "pf_9_full", "pf_14_full", "mnist"]
+img_datasets = ["mnist"]
 text_datasets = ["yelp_polarity", "yelp_full"]
 
 
@@ -106,7 +106,7 @@ def train(
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument(
-        "--dataset", choices=["pf_6_full", "pf_9_full", "pf_14_full"] + ["yelp_polarity", "yelp_full"] + ["mnist"]
+        "--dataset", choices=["yelp_polarity", "yelp_full"] + ["mnist"]
     )
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--seed", type=int, default=9)

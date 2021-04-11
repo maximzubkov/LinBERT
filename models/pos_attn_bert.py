@@ -5,15 +5,12 @@ import torch.nn as nn
 from transformers import BertModel
 from transformers.models.bert.modeling_bert import BertSelfAttention
 
-from models.modules import PositionalAttention
 from models.modules.positional_bias import PositionalBias
-from models.modules.positional_embedding import Bert2DEmbeddings
 
 
-class PosAttnBertSelfAttention(BertSelfAttention):
-    def __init__(self, config, pos_attention: nn.Module = None):
+class PosBiasBertSelfAttention(BertSelfAttention):
+    def __init__(self, config):
         super().__init__(config)
-        self.pos_attention = pos_attention
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
 
     def forward(
@@ -82,14 +79,9 @@ class PosAttnBertSelfAttention(BertSelfAttention):
         return outputs
 
 
-class PosAttnBertModel(BertModel):
+class PosBiasBertModel(BertModel):
     def __init__(self, config):
         super().__init__(config)
-        self.pos_attention = \
-            PositionalAttention(self.embeddings.position_embeddings) if config.has_pos_attention else None
-
-        if config.has_pos_embed_2d:
-            self.embeddings = Bert2DEmbeddings(config)
 
         for i, _ in enumerate(self.encoder.layer):
-            self.encoder.layer[i].attention.self = PosAttnBertSelfAttention(config, self.pos_attention)
+            self.encoder.layer[i].attention.self = PosBiasBertSelfAttention(config)

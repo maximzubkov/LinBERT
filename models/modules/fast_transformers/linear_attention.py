@@ -7,43 +7,21 @@
 from typing import Optional
 
 import torch
-import torch.nn as nn
 from torch.nn import Module
 
-from models.modules.feature_maps import (
-    elu_feature_map,
-    exp_feature_map,
-    dpfp_feature_map,
-    Favor
-)
+from models.modules.feature_maps import fm_name2func
 from models.modules.fast_transformers.causal_product import causal_dot_product
-from models.modules.positional_attention import PositionalAttention
 from models.modules.positional_bias import PositionalBias
 
 
 class LinearAttention(Module):
-    def __init__(self, config, pos_attention: PositionalAttention = None, eps=1e-6):
+    def __init__(self, config, eps=1e-6):
         super(LinearAttention, self).__init__()
-        self.pos_attention = pos_attention
         self.feature_map_name = config.feature_map
 
-        attn_head_size = config.hidden_size // config.num_attention_heads
-        max_seq_len = config.max_position_embeddings
-
-        if config.feature_map == "elu":
-            self.feature_map = elu_feature_map
-        elif config.feature_map == "exp":
-            self.feature_map = exp_feature_map
-        elif config.feature_map == "dpfp":
-            self.feature_map = dpfp_feature_map
-        elif config.feature_map == "favor":
-            self.feature_map = Favor(attn_head_size)
-        else:
-            raise ValueError("Invalid feature map specified")
+        self.feature_map = fm_name2func[config.feature_map]
         self.eps = eps
 
-        self.bn_k = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
-        self.bn_q = nn.LayerNorm([max_seq_len, attn_head_size]) if config.has_batch_norm else None
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
@@ -52,13 +30,10 @@ class LinearAttention(Module):
             offset = offset.unsqueeze(-1).unsqueeze(-3)
             q = q - offset
             k = k - offset
-        if self.bn_q is not None:
-            q = self.bn_q(q.transpose(2, 1)).transpose(2, 1)
+
         # [batch_size, q_seq_len, n_heads, p_s]
         q = self.feature_map(q)
 
-        if self.bn_k is not None:
-            k = self.bn_k(k.transpose(2, 1)).transpose(2, 1)
         # [batch_size, k_seq_len, n_heads, p_s]
         k = self.feature_map(k)
 
@@ -91,10 +66,6 @@ class LinearAttention(Module):
             if self.pos_bias is not None:
                 pbv, z_pb = self.pos_bias(v)
                 y = pbv
-
-            if self.pos_attention is not None:
-                ppv, z_pp = self.pos_attention(q, v, attention_mask, head_mask)
-                y = y + ppv if y is not None else ppv
 
             inv_z = 1 / z
             output = torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, inv_z)
