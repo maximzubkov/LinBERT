@@ -22,7 +22,10 @@ config = BertConfig(
     bias_base_type="full",
     lm=True,
     has_specials=False,
-    feature_map="elu"
+    feature_map="elu",
+    alpha=0.0001,
+    beta=0.00001,
+    lamb=2.0,
 )
 
 v = torch.rand(batch_size, seq_len, num_heads, embed_dim)

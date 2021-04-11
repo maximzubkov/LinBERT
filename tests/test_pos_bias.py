@@ -22,7 +22,10 @@ config1 = BertConfig(
     pos_bias_type=None,
     lm=False,
     has_specials=True,
-    feature_map="elu"
+    feature_map="elu",
+    alpha=0.0001,
+    beta=0.00001,
+    lamb=2.0,
 )
 
 config2 = BertConfig(
@@ -37,7 +40,10 @@ config2 = BertConfig(
     pos_bias_type=None,
     lm=False,
     has_specials=True,
-    feature_map="elu"
+    feature_map="elu",
+    alpha=0.0001,
+    beta=0.00001,
+    lamb=2.0,
 )
 
 
