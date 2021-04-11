@@ -7,7 +7,6 @@ from transformers import EvalPrediction
 from transformers.trainer_utils import set_seed
 
 from configs import ModelConfig
-from .img_gpt import unquantize, quantize, squared_euclidean_distance  # noqa
 
 
 def set_seed_(seed: int):

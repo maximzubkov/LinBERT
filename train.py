@@ -5,7 +5,7 @@ from transformers import BertTokenizerFast
 from transformers import Trainer, DataCollatorWithPadding
 from transformers import EarlyStoppingCallback
 
-from configs import yelp_config, pf_config, ModelConfig
+from configs import yelp_config, mnist_config, ModelConfig
 from dataset import get_dataset
 from models import Classifier
 from utils import set_seed_, compute_metrics, parse_model_config
@@ -47,7 +47,7 @@ def train(
         vocab_path = join(data_path, dataset_name) + ("_small" if is_test else "")
         tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
         vocab_size = tokenizer.vocab_size
-        config, training_args = pf_config(
+        config, training_args = mnist_config(
             dataset_name=dataset_name,
             output_path=output_path,
             seed=seed,
