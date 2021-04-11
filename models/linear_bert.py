@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 from transformers import BertModel
 from transformers.models.bert.modeling_bert import BertSelfAttention
 

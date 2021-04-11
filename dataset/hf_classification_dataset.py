@@ -1,4 +1,3 @@
-from os import listdir
 from os.path import join
 
 from datasets import load_dataset
