@@ -42,12 +42,7 @@ class PosBiasBertSelfAttention(BertSelfAttention):
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
-        if self.pos_attention is not None:
-            _, _, seq_len, _ = attention_scores.shape
-            attention_scores += self.pos_attention(seq_len)
-            scaling_factor = math.sqrt(2 * self.attention_head_size)
-        else:
-            scaling_factor = math.sqrt(self.attention_head_size)
+        scaling_factor = math.sqrt(self.attention_head_size)
         attention_scores = attention_scores / scaling_factor
         if attention_mask is not None:
             # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
@@ -79,7 +74,7 @@ class PosBiasBertSelfAttention(BertSelfAttention):
         return outputs
 
 
-class PosBiasBertModel(BertModel):
+class OrigBertModel(BertModel):
     def __init__(self, config):
         super().__init__(config)
 

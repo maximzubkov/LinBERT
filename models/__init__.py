@@ -1,7 +1,7 @@
 from transformers import BertForSequenceClassification
 
 from .linear_bert import LinBertModel  # noqa
-from .pos_attn_bert import PosBiasBertModel  # noqa
+from .orig_bert import OrigBertModel  # noqa
 
 
 class Classifier(BertForSequenceClassification):
@@ -10,4 +10,4 @@ class Classifier(BertForSequenceClassification):
         if config.is_linear:
             self.bert = LinBertModel(config)
         else:
-            self.bert = PosBiasBertModel(config)
+            self.bert = OrigBertModel(config)
