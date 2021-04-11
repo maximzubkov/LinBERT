@@ -12,6 +12,10 @@ class BiasBase(nn.Module):
         self.has_specials = config.has_specials
         self.n_heads = config.num_attention_heads
         self.full_seq_len = config.max_position_embeddings
+
+        self.alpha = config.alpha
+        self.beta = config.beta
+
         if self.has_specials:
             self.full_seq_len = self.full_seq_len - 2
 
@@ -24,7 +28,8 @@ class BiasBase(nn.Module):
 
     def _init_bias(self):
         w_ = torch.arange(self.shape).unsqueeze(0)
-        w_ = w_ * 0.00001 * torch.rand(self.n_heads, 1) + 0.000001 * torch.randn(self.n_heads, 1)
+        w_ = w_ * self.alpha + self.beta
+        w_ = w_ * torch.ones(self.n_heads, 1)
 
         if self.bias_base_type == "full":
             self.w_shape = 2 * self.shape - 1

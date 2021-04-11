@@ -38,6 +38,8 @@ def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
     arg_parser.add_argument("--feature_map", choices=["elu", "relu", "exp", "favor", "dpfp"], default="elu")
     arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "orig", "fft_2d", "naive_2d"], default=None)
     arg_parser.add_argument("--bias_base_type", choices=["full", "symmetric"], default=None)
+    arg_parser.add_argument("--alpha", type=float, default=0.00001)
+    arg_parser.add_argument("--beta", type=float, default=0.000001)
     args = arg_parser.parse_args()
 
     return ModelConfig(
@@ -47,5 +49,7 @@ def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
         has_pos_embed_2d=args.has_pos_embed_2d,
         feature_map=args.feature_map,
         pos_bias_type=args.pos_bias_type,
-        bias_base_type=args.bias_base_type
+        bias_base_type=args.bias_base_type,
+        alpha=args.alpha,
+        beta=args.beta
     )

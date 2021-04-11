@@ -12,3 +12,5 @@ class ModelConfig:
     bias_base_type: str = None
     lm: bool = False
     has_specials: bool = True
+    alpha: float = 0.00001
+    beta: float = 0.000001
