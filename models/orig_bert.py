@@ -20,6 +20,8 @@ class PosBiasBertSelfAttention(BertSelfAttention):
                 lm=config.lm,
                 has_specials=config.has_specials
             )
+        else:
+            self.pos_bias = None
 
     def forward(
         self,

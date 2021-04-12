@@ -31,6 +31,8 @@ class LinearAttention(Module):
                 lm=config.lm,
                 has_specials=config.has_specials
             )
+        else:
+            self.pos_bias = None
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.feature_map_name == "exp":
