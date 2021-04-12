@@ -11,10 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-      with:
-        repository: maximzubkov/positional-bias
-        token: ${{ secrets.ACCESS_TOKEN }}
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
@@ -22,6 +18,7 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       run: |
+        git config --global url."https://${{ secrets.ACESS_TOKEN }}@github".insteadOf https://github
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         python setup.py build_ext --inplace
