@@ -36,4 +36,5 @@ RUN chmod 600 /root/.ssh/id_rsa
 RUN touch /root/.ssh/known_hosts
 RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
 
-RUN sh scripts/install_pos_bias.sh
+RUN git clone git@github.com:maximzubkov/positional-bias.git
+RUN cd positional-bias && pip install -e .
