@@ -1,9 +1,7 @@
 from transformers import BertForSequenceClassification
 
-from .image_gpt import ImageGPT  # noqa
 from .linear_bert import LinBertModel  # noqa
-from .pos_attn_bert import PosAttnBertModel  # noqa
-from .vit import EfficientViT  # noqa
+from .orig_bert import OrigBertModel  # noqa
 
 
 class Classifier(BertForSequenceClassification):
@@ -12,4 +10,4 @@ class Classifier(BertForSequenceClassification):
         if config.is_linear:
             self.bert = LinBertModel(config)
         else:
-            self.bert = PosAttnBertModel(config)
+            self.bert = OrigBertModel(config)

@@ -1,4 +1,3 @@
-from os import listdir
 from os.path import join
 
 from datasets import load_dataset
@@ -14,30 +13,6 @@ dataset_config = {
     "yelp_polarity": {
         "num_labels": 2,
         "labels": [1, 2]
-    },
-    "pf_6_full": {
-        "num_labels": 2,
-        "labels": [0, 1],
-    },
-    "pf_6_full_small": {
-        "num_labels": 2,
-        "labels": [0, 1],
-    },
-    "pf_14_full": {
-        "num_labels": 2,
-        "labels": [0, 1],
-    },
-    "pf_14_full_small": {
-        "num_labels": 2,
-        "labels": [0, 1],
-    },
-    "pf_9_full": {
-        "num_labels": 2,
-        "labels": [0, 1],
-    },
-    "pf_9_full_small": {
-        "num_labels": 2,
-        "labels": [0, 1],
     },
     "mnist": {
         "num_labels": 10,
@@ -63,11 +38,6 @@ def get_dataset(
         split = f"{split}_small" if is_test else split
         paths = [join(data_path, name, f"{split}.csv")]
         batch_size = 1000
-    elif name in ["pf_6_full", "pf_9_full", "pf_14_full"]:
-        name = f"{name}_small" if is_test else name
-        path = join(data_path, name, split, "csv")
-        paths = [join(path, file) for file in listdir(path)]
-        batch_size = 100
     elif name in ["mnist"]:
         name = f"{name}_small" if is_test else name
         paths = [join(data_path, name, f"{split}.csv")]

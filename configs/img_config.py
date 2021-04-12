@@ -6,7 +6,7 @@ from dataset import dataset_config
 from .model_config import ModelConfig
 
 
-def pf_config(
+def mnist_config(
         dataset_name: str,
         output_path: str,
         seed: int,

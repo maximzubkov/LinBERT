@@ -5,15 +5,12 @@ import torch.nn as nn
 from transformers import BertModel
 from transformers.models.bert.modeling_bert import BertSelfAttention
 
-from models.modules import PositionalAttention
 from models.modules.positional_bias import PositionalBias
-from models.modules.positional_embedding import Bert2DEmbeddings
 
 
-class PosAttnBertSelfAttention(BertSelfAttention):
-    def __init__(self, config, pos_attention: nn.Module = None):
+class PosBiasBertSelfAttention(BertSelfAttention):
+    def __init__(self, config):
         super().__init__(config)
-        self.pos_attention = pos_attention
         self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
 
     def forward(
@@ -45,12 +42,7 @@ class PosAttnBertSelfAttention(BertSelfAttention):
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
-        if self.pos_attention is not None:
-            _, _, seq_len, _ = attention_scores.shape
-            attention_scores += self.pos_attention(seq_len)
-            scaling_factor = math.sqrt(2 * self.attention_head_size)
-        else:
-            scaling_factor = math.sqrt(self.attention_head_size)
+        scaling_factor = math.sqrt(self.attention_head_size)
         attention_scores = attention_scores / scaling_factor
         if attention_mask is not None:
             # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
@@ -82,14 +74,9 @@ class PosAttnBertSelfAttention(BertSelfAttention):
         return outputs
 
 
-class PosAttnBertModel(BertModel):
+class OrigBertModel(BertModel):
     def __init__(self, config):
         super().__init__(config)
-        self.pos_attention = \
-            PositionalAttention(self.embeddings.position_embeddings) if config.has_pos_attention else None
-
-        if config.has_pos_embed_2d:
-            self.embeddings = Bert2DEmbeddings(config)
 
         for i, _ in enumerate(self.encoder.layer):
-            self.encoder.layer[i].attention.self = PosAttnBertSelfAttention(config, self.pos_attention)
+            self.encoder.layer[i].attention.self = PosBiasBertSelfAttention(config)
