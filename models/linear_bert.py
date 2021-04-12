@@ -2,7 +2,7 @@ import torch
 from transformers import BertModel
 from transformers.models.bert.modeling_bert import BertSelfAttention
 
-from models.modules.common import transpose_for_scores
+from models.common import transpose_for_scores
 from models.modules.fast_transformers import LinearAttention
 
 
