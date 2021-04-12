@@ -26,3 +26,4 @@ RUN pip install -r requirements.txt
 
 RUN python setup.py build_ext --inplace
 RUN pip install -e .
+RUN sh scripts/install_pos_bias.sh

@@ -1,5 +1,5 @@
-flake8==3.8.3
-pytest==6.0.2
+flake8==3.9.0
+pytest==6.2.3
 setuptools~=50.3.2
 torch==1.8.1
 tokenizers~=0.10.1
@@ -12,9 +12,6 @@ gdown==3.12.2
 tqdm~=4.49.0
 dataclasses~=0.6
 torchvision~=0.9.0
-pytorch-lightning==1.1.8
-vit-pytorch==0.9.3
-einops~=0.3.0
 PyYAML~=5.3
 Pillow==8.1.1
 scikit_learn==0.23.2

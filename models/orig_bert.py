@@ -5,13 +5,23 @@ import torch.nn as nn
 from transformers import BertModel
 from transformers.models.bert.modeling_bert import BertSelfAttention
 
-from models.modules.positional_bias import PositionalBias
+from positional_bias.pytorch import PositionalBias
 
 
 class PosBiasBertSelfAttention(BertSelfAttention):
     def __init__(self, config):
         super().__init__(config)
-        self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
+        if config.pos_bias_type is not None:
+            self.pos_bias = PositionalBias(
+                bias_base_type=config.bias_base_type,
+                pos_bias_type=config.pos_bias_type,
+                num_attention_heads=config.num_attention_heads,
+                seq_len=config.max_position_embeddings,
+                lm=config.lm,
+                has_specials=config.has_specials
+            )
+        else:
+            self.pos_bias = None
 
     def forward(
         self,
