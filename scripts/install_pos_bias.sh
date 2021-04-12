@@ -7,5 +7,5 @@ then
   mkdir "$BUILD"
 fi
 
-git clone https://github.com/maximzubkov/positional-bias.git "$BUILD"/positional-bias
+RUN git clone git@github.com:maximzubkov/positional-bias.git "$BUILD"/positional-bias
 cd "$BUILD"/positional-bias && pip install -e .
