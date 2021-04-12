@@ -11,7 +11,7 @@ from torch.nn import Module
 
 from models.modules.feature_maps import fm_name2func
 from models.modules.fast_transformers.causal_product import causal_dot_product
-from models.modules.positional_bias import PositionalBias
+from positional_bias.pytorch import PositionalBias
 
 
 class LinearAttention(Module):
@@ -22,7 +22,15 @@ class LinearAttention(Module):
         self.feature_map = fm_name2func[config.feature_map]
         self.eps = eps
 
-        self.pos_bias = PositionalBias(config) if config.pos_bias_type is not None else None
+        if config.pos_bias_type is not None:
+            self.pos_bias = PositionalBias(
+                bias_base_type=config.bias_base_type,
+                pos_bias_type=config.pos_bias_type,
+                num_attention_heads=config.num_attention_heads,
+                seq_len=config.max_position_embeddings,
+                lm=config.lm,
+                has_specials=config.has_specials
+            )
 
     def forward(self, q, k, v, attention_mask: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None):
         if self.feature_map_name == "exp":
