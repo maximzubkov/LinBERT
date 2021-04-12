@@ -1,3 +1,4 @@
+run-as: zubkov.md@phystech.com
 name: Build
 
 on:
