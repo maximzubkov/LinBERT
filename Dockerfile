@@ -10,6 +10,7 @@ RUN apt-get update \
                        unzip \
                        cmake \
                        git \
+                       ssh \
                        python3-dev python3-pip python3-setuptools
 
 RUN ln -sf $(which python3) /usr/bin/python \
@@ -26,4 +27,14 @@ RUN pip install -r requirements.txt
 
 RUN python setup.py build_ext --inplace
 RUN pip install -e .
-RUN sh scripts/install_pos_bias.sh
+
+ARG SSH_PRIVATE_KEY
+RUN mkdir /root/.ssh/
+RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
+RUN chmod 600 /root/.ssh/id_rsa
+
+RUN touch /root/.ssh/known_hosts
+RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+
+RUN git clone git@github.com:maximzubkov/positional-bias.git
+RUN cd positional-bias && pip install -e .
