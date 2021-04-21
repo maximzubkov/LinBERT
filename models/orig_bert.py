@@ -17,8 +17,9 @@ class PosBiasBertSelfAttention(BertSelfAttention):
                 pos_bias_type=config.pos_bias_type,
                 num_attention_heads=config.num_attention_heads,
                 max_seq_len=config.max_position_embeddings,
+                has_first_special_token=config.has_first_special_token,
+                has_last_special_token=config.has_last_special_token,
                 lm=config.lm,
-                has_specials=config.has_specials
             )
         else:
             self.pos_bias = None
@@ -89,4 +90,5 @@ class OrigBertModel(BertModel):
         super().__init__(config)
 
         for i, _ in enumerate(self.encoder.layer):
+            print(config)
             self.encoder.layer[i].attention.self = PosBiasBertSelfAttention(config)
