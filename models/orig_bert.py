@@ -16,7 +16,7 @@ class PosBiasBertSelfAttention(BertSelfAttention):
                 bias_base_type=config.bias_base_type,
                 pos_bias_type=config.pos_bias_type,
                 num_attention_heads=config.num_attention_heads,
-                seq_len=config.max_position_embeddings,
+                max_seq_len=config.max_position_embeddings,
                 lm=config.lm,
                 has_specials=config.has_specials
             )
