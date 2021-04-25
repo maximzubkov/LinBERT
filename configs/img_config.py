@@ -55,8 +55,8 @@ def mnist_config(
             per_device_batch_size = 40
             gradient_accumulation_steps = 1
         else:
-            per_device_batch_size = 20
-            gradient_accumulation_steps = 2
+            per_device_batch_size = 13
+            gradient_accumulation_steps = 3
         training_args = TrainingArguments(
             output_dir=output_path,
             overwrite_output_dir=True,
