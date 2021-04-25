@@ -51,12 +51,20 @@ def mnist_config(
             **model_config.__dict__
         )
     else:
+        if model_config.is_linear:
+            per_device_batch_size = 40
+            gradient_accumulation_steps = 1
+        else:
+            per_device_batch_size = 20
+            gradient_accumulation_steps = 2
         training_args = TrainingArguments(
             output_dir=output_path,
             overwrite_output_dir=True,
             num_train_epochs=25,
-            per_device_train_batch_size=40,
-            per_device_eval_batch_size=40,
+            per_device_train_batch_size=per_device_batch_size,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            per_device_eval_batch_size=per_device_batch_size,
+            eval_accumulation_steps=gradient_accumulation_steps,
             load_best_model_at_end=True,
             evaluation_strategy="steps",
             save_steps=10_000,
