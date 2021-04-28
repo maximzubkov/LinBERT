@@ -8,5 +8,5 @@ class ModelConfig:
     pos_bias_type: str = None
     bias_base_type: str = None
     lm: bool = False
-    has_first_special_token: bool = True
-    has_last_special_token: bool = True
+    has_bos: bool = True
+    has_eos: bool = True

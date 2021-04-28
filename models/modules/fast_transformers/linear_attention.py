@@ -28,8 +28,8 @@ class LinearAttention(Module):
                 pos_bias_type=config.pos_bias_type,
                 num_attention_heads=config.num_attention_heads,
                 max_seq_len=config.max_position_embeddings,
-                has_first_special_token=config.has_first_special_token,
-                has_last_special_token=config.has_last_special_token,
+                has_bos=config.has_bos,
+                has_eos=config.has_eos,
                 lm=config.lm,
             )
         else:
