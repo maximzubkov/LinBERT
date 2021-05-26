@@ -1,0 +1,70 @@
+command:
+  - python
+  - train.py
+  - --dataset=mnist
+  - --is_linear
+  - --x_shape=28
+  - --y_shape=28
+  - --pos_bias_type=fft_2d
+  - --bias_base_type=full
+  - --feature_map=favor
+  - --seed=9
+  - ${args}
+method: bayes
+metric:
+  goal: maximize
+  name: eval/f1
+parameters:
+  learning_rate:
+    values: [
+        250e-6,
+        245e-6,
+        240e-6,
+        235e-6,
+        230e-6,
+        225e-6,
+        220e-6,
+        215e-6,
+        210e-6,
+        205e-6,
+        200e-6,
+        195e-6,
+        190e-6,
+        185e-6,
+        180e-6,
+        175e-6,
+        170e-6,
+        165e-6,
+        160e-6,
+        155e-6,
+        150e-6,
+        145e-6,
+        140e-6,
+        135e-6,
+        130e-6,
+        125e-6,
+        120e-6,
+        115e-6,
+        110e-6,
+        105e-6,
+        100e-6,
+        95e-6,
+        90e-6,
+        85e-6,
+        80e-6,
+        75e-6,
+        70e-6,
+        65e-6,
+        60e-6,
+        55e-6,
+        50e-6,
+        45e-6,
+        40e-6,
+        35e-6,
+        30e-6,
+        25e-6,
+        20e-6,
+        15e-6,
+        10e-6,
+        5e-6
+    ]
