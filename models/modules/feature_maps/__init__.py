@@ -14,4 +14,3 @@ def fm_name2func(name: str, q_dim: int, device: torch.device = None):
         favor = Favor(q_dim)
         favor.new_feature_map(device)
         return Favor(q_dim)
-
