@@ -30,7 +30,7 @@ def compute_metrics(pred: EvalPrediction):
 
 def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
     arg_parser.add_argument("--is_linear", action='store_true')
-    arg_parser.add_argument("--feature_map", choices=["elu", "exp", "dpfp"], default="elu")
+    arg_parser.add_argument("--feature_map", choices=["elu", "exp", "dpfp", "favor"], default="elu")
     arg_parser.add_argument("--pos_bias_type", choices=["fft", "naive", "fft_2d", "naive_2d"], default=None)
     arg_parser.add_argument("--bias_base_type", choices=["full", "symmetric"], default=None)
     args = arg_parser.parse_args()

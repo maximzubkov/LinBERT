@@ -17,9 +17,14 @@ from positional_bias.pytorch import PositionalBias
 class LinearAttention(Module):
     def __init__(self, config, eps=1e-6):
         super(LinearAttention, self).__init__()
-        self.feature_map_name = config.feature_map
 
-        self.feature_map = fm_name2func[config.feature_map]
+        self.feature_map_name = config.feature_map
+        self.feature_map = fm_name2func(
+            config.feature_map,
+            q_dim=config.hidden_size // config.num_attention_heads,
+            device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+
         self.eps = eps
 
         if config.pos_bias_type is not None:
