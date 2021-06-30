@@ -1,6 +1,8 @@
 import time
 from argparse import ArgumentParser
 from os.path import join
+from dataclasses import asdict
+from json import dump
 
 from transformers import BertTokenizerFast
 from transformers import EarlyStoppingCallback
@@ -126,7 +128,7 @@ if __name__ == "__main__":
 
     diffs = []
     memory = []
-    for seed in range(10):
+    for seed in range(3):
         diff, mem = eval(
             dataset_name=args.dataset,
             seed=seed,
@@ -140,4 +142,10 @@ if __name__ == "__main__":
         diffs.append(diff)
         memory.append(mem)
 
-    print(diffs, memory)
+    config = {"time": diffs, "memory": memory}
+
+    base = "lin" if args.is_linear else "orig"
+    name = f"{base}_{args.feature_map}_{args.pos_bias_type}.json"
+
+    with open(name, "w") as outfile:
+        dump(config, outfile)
