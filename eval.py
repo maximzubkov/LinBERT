@@ -1,8 +1,7 @@
 import time
 from argparse import ArgumentParser
-from os.path import join
-from dataclasses import asdict
 from json import dump
+from os.path import join
 
 from transformers import BertTokenizerFast
 from transformers import EarlyStoppingCallback
