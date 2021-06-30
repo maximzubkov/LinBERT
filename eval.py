@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     diffs = []
     memory = []
-    for seed in range(3):
+    for seed in range(10):
         diff, mem = eval(
             dataset_name=args.dataset,
             seed=seed,
