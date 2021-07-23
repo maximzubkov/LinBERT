@@ -13,6 +13,7 @@ def mnist_config(
         is_test: bool,
         vocab_size: int,
         model_config: ModelConfig,
+        n_channels: int = 1,
         x_shape: int = 30,
         y_shape: int = 30,
         lr: float = 1e-4,
@@ -46,6 +47,7 @@ def mnist_config(
             num_labels=dataset_config[dataset_name]["num_labels"],
             x_shape=x_shape,
             y_shape=y_shape,
+            n_channels=n_channels,
             return_attention_mask=True,
             return_token_type_ids=False,
             **model_config.__dict__
@@ -87,6 +89,7 @@ def mnist_config(
             num_labels=dataset_config[dataset_name]["num_labels"],
             x_shape=x_shape,
             y_shape=y_shape,
+            n_channels=n_channels,
             return_attention_mask=True,
             return_token_type_ids=False,
             **model_config.__dict__

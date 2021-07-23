@@ -35,6 +35,7 @@ class LinearAttention(Module):
                 max_seq_len=config.max_position_embeddings,
                 has_bos=config.has_bos,
                 has_eos=config.has_eos,
+                n_channels=config.n_channels,
                 lm=config.lm,
             )
         else:
@@ -61,9 +62,6 @@ class LinearAttention(Module):
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
             v_ = self.causal_linear(q, k, v)
 
-            if self.pos_bias is not None:
-                pbv, z_pb = self.pos_bias(v)
-                y = pbv
             if head_mask is not None:
                 v_ = v_ * head_mask.view(1, 1, *head_mask.shape, 1)
 
@@ -79,14 +77,10 @@ class LinearAttention(Module):
             # [batch_size, target_seq_len, n_heads]
             z = torch.einsum("nlhd,nhd->nlh", q, k.sum(dim=1)) + self.eps
 
-            if self.pos_bias is not None:
-                pbv, z_pb = self.pos_bias(v)
-                y = pbv
-
             inv_z = 1 / z
             output = torch.einsum("nlhd,nhmd,nlh->nlhm", q, kv, inv_z)
-        if y is not None:
-            output = output + y
+        if self.pos_bias is not None:
+            output = output + self.pos_bias(v)
         return output
 
     def recurrent(self, q, k, v, memory=None):

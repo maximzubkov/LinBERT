@@ -24,6 +24,7 @@ def train(
         max_seq_len: int = None,
         x_shape: int = None,
         y_shape: int = None,
+        n_channels: int = 1,
         lr: float = 1e-4
 ):
     set_seed_(seed)
@@ -54,6 +55,7 @@ def train(
             is_test=is_test,
             x_shape=x_shape,
             y_shape=y_shape,
+            n_channels=n_channels,
             vocab_size=vocab_size,
             lr=lr,
             model_config=model_config
@@ -112,6 +114,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--seed", type=int, default=9)
     arg_parser.add_argument("--resume", type=str, default=None)
     arg_parser.add_argument("--max_seq_len", type=int, default=None)
+    arg_parser.add_argument("--n_channels", type=int, default=1)
     arg_parser.add_argument("--x_shape", type=int, default=None)
     arg_parser.add_argument("--y_shape", type=int, default=None)
     arg_parser.add_argument("--learning_rate", type=float, default=1e-4)
@@ -124,6 +127,7 @@ if __name__ == "__main__":
         seed=args.seed,
         is_test=args.test,
         max_seq_len=args.max_seq_len,
+        n_channels=args.n_channels,
         x_shape=args.x_shape,
         y_shape=args.y_shape,
         lr=args.learning_rate,
