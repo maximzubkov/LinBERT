@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DATASET_NAME=mnli
+N_EPOCHS=3
 
 while (( "$#" )); do
   case "$1" in
@@ -25,6 +26,11 @@ while (( "$#" )); do
   esac
 done
 
+if [ "$DATASET_NAME" = "mrpc" ] || [ "$DATASET_NAME" = "wnli" ]
+then
+    N_EPOCHS=5
+fi
+
 python glue.py \
   --model_name_or_path bert-base-cased \
   --task_name "$DATASET_NAME" \
@@ -33,5 +39,5 @@ python glue.py \
   --max_seq_length 128 \
   --per_device_train_batch_size 32 \
   --learning_rate 2e-5 \
-  --num_train_epochs 3 \
+  --num_train_epochs $N_EPOCHS \
   --output_dir /tmp/"$DATASET_NAME"

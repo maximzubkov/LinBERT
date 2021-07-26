@@ -54,10 +54,6 @@ class LinearAttention(Module):
         # [batch_size, k_seq_len, n_heads, p_s]
         k = self.feature_map(k)
 
-        # y equals to numerator value after applying attention
-        # [batch_size, target_seq_len, n_heads, p_s]
-        y = None
-
         if attention_mask is None:  # causal attention
             z = torch.einsum("nlhi,nlhi->nlh", q, k.cumsum(1)) + self.eps
             v_ = self.causal_linear(q, k, v)
