@@ -2,8 +2,11 @@
 
 Note: for legal reasons, we are unable to host MRPC.
 You can either use the version hosted by the SentEval team, which is already tokenized,
-or you can download the original data from (https://download.microsoft.com/download/D/4/6/D46FF87A-F6B9-4252-AA8B-3604ED519838/MSRParaphraseCorpus.msi) and extract the data from it manually.
-For Windows users, you can run the .msi file. For Mac and Linux users, consider an external library such as 'cabextract' (see below for an example).
+or you can download the original data from
+(https://download.microsoft.com/download/D/4/6/D46FF87A-F6B9-4252-AA8B-3604ED519838/MSRParaphraseCorpus.msi)
+and extract the data from it manually.
+For Windows users, you can run the .msi file. For Mac and Linux users, consider an external library such as 'cabextract'
+(see below for an example).
 You should then rename and place specific files in a folder (see below for an example).
 
 mkdir MRPC
@@ -13,32 +16,33 @@ cat MRPC/_D7B391F9EAFF4B1B8BCE8F21B20B1B61 | tr -d $'\r' > MRPC/msr_paraphrase_t
 rm MRPC/_*
 rm MSRParaphraseCorpus.msi
 
-1/30/19: It looks like SentEval is no longer hosting their extracted and tokenized MRPC data, so you'll need to download the data from the original source for now.
+1/30/19: It looks like SentEval is no longer hosting their extracted and tokenized MRPC data, so you'll need to download
+the data from the original source for now.
 2/11/19: It looks like SentEval actually *is* hosting the extracted data. Hooray!
 '''
 
+import argparse
+import io
 import os
 import sys
-import shutil
-import argparse
-import tempfile
 import urllib.request
 import zipfile
-import io
 
 URLLIB = urllib.request
 
 TASKS = ["CoLA", "SST", "MRPC", "QQP", "STS", "MNLI", "QNLI", "RTE", "WNLI", "diagnostic"]
-TASK2PATH = {"CoLA": 'https://dl.fbaipublicfiles.com/glue/data/CoLA.zip',
-             "SST": 'https://dl.fbaipublicfiles.com/glue/data/SST-2.zip',
-             "QQP": 'https://dl.fbaipublicfiles.com/glue/data/STS-B.zip',
-             "STS": 'https://dl.fbaipublicfiles.com/glue/data/QQP-clean.zip',
-             "MNLI": 'https://dl.fbaipublicfiles.com/glue/data/MNLI.zip',
-             "QNLI": 'https://dl.fbaipublicfiles.com/glue/data/QNLIv2.zip',
-             "RTE": 'https://dl.fbaipublicfiles.com/glue/data/RTE.zip',
-             "MRPC": "https://raw.githubusercontent.com/MegEngine/Models/master/official/nlp/bert/glue_data/MRPC/dev_ids.tsv",
-             "WNLI": 'https://dl.fbaipublicfiles.com/glue/data/WNLI.zip',
-             "diagnostic": 'https://dl.fbaipublicfiles.com/glue/data/AX.tsv'}
+TASK2PATH = {
+    "CoLA": "https://dl.fbaipublicfiles.com/glue/data/CoLA.zip",
+    "SST": "https://dl.fbaipublicfiles.com/glue/data/SST-2.zip",
+    "QQP": "https://dl.fbaipublicfiles.com/glue/data/STS-B.zip",
+    "STS": "https://dl.fbaipublicfiles.com/glue/data/QQP-clean.zip",
+    "MNLI": "https://dl.fbaipublicfiles.com/glue/data/MNLI.zip",
+    "QNLI": "https://dl.fbaipublicfiles.com/glue/data/QNLIv2.zip",
+    "RTE": "https://dl.fbaipublicfiles.com/glue/data/RTE.zip",
+    "MRPC": "https://raw.githubusercontent.com/MegEngine/Models/master/official/nlp/bert/glue_data/MRPC/dev_ids.tsv",
+    "WNLI": "https://dl.fbaipublicfiles.com/glue/data/WNLI.zip",
+    "diagnostic": "https://dl.fbaipublicfiles.com/glue/data/AX.tsv"
+}
 
 MRPC_TRAIN = 'https://dl.fbaipublicfiles.com/senteval/senteval_data/msr_paraphrase_train.txt'
 MRPC_TEST = 'https://dl.fbaipublicfiles.com/senteval/senteval_data/msr_paraphrase_test.txt'
@@ -47,8 +51,8 @@ MRPC_TEST = 'https://dl.fbaipublicfiles.com/senteval/senteval_data/msr_paraphras
 def download_and_extract(task, data_dir):
     print("Downloading and extracting %s..." % task)
     if task == "MNLI":
-        print(
-            "\tNote (12/10/20): This script no longer downloads SNLI. You will need to manually download and format the data to use SNLI.")
+        print("\tNote (12/10/20): This script no longer downloads SNLI. \
+                You will need to manually download and format the data to use SNLI.")
     data_file = "%s.zip" % task
     urllib.request.urlretrieve(TASK2PATH[task], data_file)
     with zipfile.ZipFile(data_file) as zip_ref:
@@ -78,7 +82,7 @@ def format_mrpc(data_dir, path_to_data):
     assert os.path.isfile(mrpc_test_file), "Test data not found at %s" % mrpc_test_file
 
     with io.open(mrpc_test_file, encoding='utf-8') as data_fh, \
-        io.open(os.path.join(mrpc_dir, "test.tsv"), 'w', encoding='utf-8') as test_fh:
+         io.open(os.path.join(mrpc_dir, "test.tsv"), 'w', encoding='utf-8') as test_fh:
         header = data_fh.readline()
         test_fh.write("index\t#1 ID\t#2 ID\t#1 String\t#2 String\n")
         for idx, row in enumerate(data_fh):
@@ -97,8 +101,8 @@ def format_mrpc(data_dir, path_to_data):
             dev_ids.append(row.strip().split('\t'))
 
     with io.open(mrpc_train_file, encoding='utf-8') as data_fh, \
-        io.open(os.path.join(mrpc_dir, "train.tsv"), 'w', encoding='utf-8') as train_fh, \
-        io.open(os.path.join(mrpc_dir, "dev.tsv"), 'w', encoding='utf-8') as dev_fh:
+         io.open(os.path.join(mrpc_dir, "train.tsv"), 'w', encoding='utf-8') as train_fh, \
+         io.open(os.path.join(mrpc_dir, "dev.tsv"), 'w', encoding='utf-8') as dev_fh:
         header = data_fh.readline()
         train_fh.write(header)
         dev_fh.write(header)
@@ -136,12 +140,24 @@ def get_tasks(task_names):
 
 def main(arguments):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', help='directory to save data to', type=str, default='glue_data')
-    parser.add_argument('--tasks', help='tasks to download data for as a comma separated string',
-                        type=str, default='all')
-    parser.add_argument('--path_to_mrpc',
-                        help='path to directory containing extracted MRPC data, msr_paraphrase_train.txt and msr_paraphrase_text.txt',
-                        type=str, default='')
+    parser.add_argument(
+        '--data_dir',
+        help='directory to save data to',
+        type=str,
+        default='glue_data'
+    )
+    parser.add_argument(
+        '--tasks',
+        help='tasks to download data for as a comma separated string',
+        type=str,
+        default='all'
+    )
+    parser.add_argument(
+        '--path_to_mrpc',
+        help='path to directory containing extracted MRPC data, msr_paraphrase_train.txt and msr_paraphrase_text.txt',
+        type=str,
+        default=''
+    )
     args = parser.parse_args(arguments)
 
     if not os.path.isdir(args.data_dir):

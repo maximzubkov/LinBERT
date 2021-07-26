@@ -387,7 +387,9 @@ def main():
 
         # Map labels to IDs (not necessary for GLUE tasks)
         if label_to_id is not None and "label" in examples:
-            result["label"] = [(label_to_id[l] if l != -1 else -1) for l in examples["label"]]
+            result["label"] = [
+                (label_to_id[l_] if l_ != -1 else -1) for l_ in examples["label"]
+            ]
         return result
 
     raw_datasets = raw_datasets.map(
