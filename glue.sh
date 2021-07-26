@@ -2,13 +2,15 @@
 
 DATASET_NAME=mnli
 N_EPOCHS=3
+SEED=42
 
 while (( "$#" )); do
   case "$1" in
     -h|--help)
       echo "options:"
       echo "-h, --help                     show brief help"
-      echo "-d, --dataset NAME             specify dataset name, available: codeforces, poj_104"
+      echo "-d, --dataset NAME             specify dataset name from glue benchmark"
+      echo "--seed INT                 specify seed value"
       exit 0
       ;;
     -d|--dataset*)
@@ -17,6 +19,15 @@ while (( "$#" )); do
         shift 2
       else
         echo "Specify dataset name"
+        exit 1
+      fi
+      ;;
+    --seed*)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        SEED=$2
+        shift 2
+      else
+        echo "Specify seed"
         exit 1
       fi
       ;;
@@ -36,6 +47,7 @@ python glue.py \
   --task_name "$DATASET_NAME" \
   --do_train \
   --do_eval \
+  --seed $SEED \
   --max_seq_length 128 \
   --per_device_train_batch_size 32 \
   --learning_rate 2e-5 \
