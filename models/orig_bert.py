@@ -75,8 +75,7 @@ class PosBiasBertSelfAttention(BertSelfAttention):
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
 
         if self.pos_bias is not None:
-            pbv, z_pb = self.pos_bias(value_layer.transpose(-2, -3))
-            context_layer = context_layer + pbv
+            context_layer = context_layer + self.pos_bias(value_layer.transpose(-2, -3))
 
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)

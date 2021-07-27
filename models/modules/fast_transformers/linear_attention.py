@@ -28,16 +28,19 @@ class LinearAttention(Module):
         self.eps = eps
 
         if config.pos_bias_type is not None:
-            self.pos_bias = PositionalBias(
+            kwargs = dict(
                 bias_base_type=config.bias_base_type,
                 pos_bias_type=config.pos_bias_type,
                 num_attention_heads=config.num_attention_heads,
                 max_seq_len=config.max_position_embeddings,
                 has_bos=config.has_bos,
                 has_eos=config.has_eos,
-                n_channels=config.n_channels,
                 lm=config.lm,
             )
+            if config.pos_bias_type in ["fft_2d", "naive_2d"]:
+                kwargs["n_channels"] = config.n_channels
+
+            self.pos_bias = PositionalBias(**kwargs)
         else:
             self.pos_bias = None
 
