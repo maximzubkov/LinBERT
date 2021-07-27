@@ -88,7 +88,7 @@ python glue.py \
   --per_device_train_batch_size 32 \
   --learning_rate 2e-5 \
   --num_train_epochs $N_EPOCHS \
-  --output_dir /tmp/"$DATASET_NAME"-"$SEED" \
+  --output_dir "$OUTPUT_DIR" \
   --is_linear "$IS_LINEAR" \
   --feature_map "$FEATURE_MAP" \
   --pos_bias_type "$PB_TYPE" \
