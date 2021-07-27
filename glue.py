@@ -42,6 +42,8 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 
+from utils import add_pos_bias, make_attn_linear
+
 task_to_keys = {
     "cola": ("sentence", None),
     "mnli": ("premise", "hypothesis"),
@@ -174,6 +176,22 @@ class ModelArguments:
             "with private models)."
         },
     )
+    is_linear: bool = field(
+        default=False,
+        metadata={"help": "Use linear attention or not"},
+    )
+    feature_map: str = field(
+        default=None,
+        metadata={"help": "Feature map for linear attention"},
+    )
+    pos_bias_type: str = field(
+        default=None,
+        metadata={"help": "Type of positional bias"},
+    )
+    bias_base_type: str = field(
+        default=None,
+        metadata={"help": "Type of bias"},
+    )
 
 
 def main():
@@ -305,6 +323,21 @@ def main():
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
     )
+
+    kwargs = dict(
+        is_linear=model_args.is_linear,
+        feature_map=model_args.feature_map,
+        pos_bias_type=model_args.pos_bias_type,
+        bias_base_type=model_args.bias_base_type,
+        has_bos=True,
+        has_eos=True,
+        n_channels=None,
+        lm=False
+    )
+
+    for key, value in kwargs.items():
+        setattr(config, key, value)
+
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
@@ -312,6 +345,7 @@ def main():
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
     )
+
     model = AutoModelForSequenceClassification.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
@@ -320,6 +354,12 @@ def main():
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
     )
+
+    if model_args.is_linear:
+        model = make_attn_linear(model, config)
+    else:
+        if model_args.pos_bias_type is not None:
+            model = add_pos_bias(model, config)
 
     # Preprocessing the raw_datasets
     if data_args.task_name is not None:
