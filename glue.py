@@ -181,15 +181,15 @@ class ModelArguments:
         metadata={"help": "Use linear attention or not"},
     )
     feature_map: str = field(
-        default=None,
+        default="",
         metadata={"help": "Feature map for linear attention"},
     )
     pos_bias_type: str = field(
-        default=None,
+        default="",
         metadata={"help": "Type of positional bias"},
     )
     bias_base_type: str = field(
-        default=None,
+        default="",
         metadata={"help": "Type of bias"},
     )
 
@@ -327,7 +327,7 @@ def main():
     kwargs = dict(
         is_linear=model_args.is_linear,
         feature_map=model_args.feature_map,
-        pos_bias_type=model_args.pos_bias_type,
+        pos_bias_type=model_args.pos_bias_type if model_args.pos_bias_type else None,
         bias_base_type=model_args.bias_base_type,
         has_bos=True,
         has_eos=True,
@@ -358,8 +358,10 @@ def main():
     if model_args.is_linear:
         model = make_attn_linear(model, config)
     else:
-        if model_args.pos_bias_type is not None:
+        if model_args.pos_bias_type:
             model = add_pos_bias(model, config)
+
+    print(kwargs)
 
     # Preprocessing the raw_datasets
     if data_args.task_name is not None:

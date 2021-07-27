@@ -3,6 +3,10 @@
 DATASET_NAME=mnli
 N_EPOCHS=3
 SEED=42
+IS_LINEAR=false
+FEATURE_MAP=""
+PB_TYPE=""
+BIAS_TYPE=""
 
 while (( "$#" )); do
   case "$1" in
@@ -22,6 +26,24 @@ while (( "$#" )); do
         exit 1
       fi
       ;;
+    --is_linear*)
+      IS_LINEAR=true
+      shift
+      ;;
+    --feature_map*)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        FEATURE_MAP=$2
+        shift 2
+      else
+        echo "Specify feature_map"
+        exit 1
+      fi
+      ;;
+    --pos_bias*)
+      PB_TYPE=fft
+      BIAS_TYPE=full
+      shift
+      ;;
     --seed*)
       if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
         SEED=$2
@@ -36,6 +58,20 @@ while (( "$#" )); do
       exit 1
   esac
 done
+
+OUTPUT_DIR=/tmp/"$DATASET_NAME"-"$SEED"
+
+if $IS_LINEAR
+then
+    OUTPUT_DIR="$OUTPUT_DIR"-lin-"$FEATURE_MAP"
+else
+    OUTPUT_DIR="$OUTPUT_DIR"-orig
+fi
+
+if [ "$PB_TYPE" = "fft" ]
+then
+    OUTPUT_DIR="$OUTPUT_DIR"-fft
+fi
 
 if [ "$DATASET_NAME" = "mrpc" ] || [ "$DATASET_NAME" = "wnli" ]
 then
@@ -52,4 +88,8 @@ python glue.py \
   --per_device_train_batch_size 32 \
   --learning_rate 2e-5 \
   --num_train_epochs $N_EPOCHS \
-  --output_dir /tmp/"$DATASET_NAME"-"$SEED"
+  --output_dir /tmp/"$DATASET_NAME"-"$SEED" \
+  --is_linear "$IS_LINEAR" \
+  --feature_map "$FEATURE_MAP" \
+  --pos_bias_type "$PB_TYPE" \
+  --bias_base_type "$BIAS_TYPE"
