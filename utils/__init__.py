@@ -68,7 +68,6 @@ def _copy_self_attn(self_attn, target_self_attn):
 
 def make_attn_linear(model: BertModel, config: BertConfig):
     tmp_model = deepcopy(model)
-    print(config)
 
     for i, _ in enumerate(tmp_model.bert.encoder.layer):
         model.bert.encoder.layer[i].attention.self = LinBertSelfAttention(config)
@@ -82,7 +81,6 @@ def make_attn_linear(model: BertModel, config: BertConfig):
 
 def add_pos_bias(model: BertModel, config: BertConfig):
     tmp_model = deepcopy(model)
-    print(config)
 
     for i, _ in enumerate(tmp_model.bert.encoder.layer):
         model.bert.encoder.layer[i].attention.self = PosBiasBertSelfAttention(config)
@@ -91,4 +89,13 @@ def add_pos_bias(model: BertModel, config: BertConfig):
             self_attn=model.bert.encoder.layer[i].attention.self,
             target_self_attn=tmp_model.bert.encoder.layer[i].attention.self
         )
+    return model
+
+
+def freeze_weights(model: BertModel):
+    for param in model.parameters():
+        param.requires_grad = False
+    for i, _ in enumerate(model.bert.encoder.layer):
+        for param in model.bert.encoder.layer[i].attention.parameters():
+            param.requires_grad = True
     return model

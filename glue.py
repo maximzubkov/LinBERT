@@ -42,7 +42,7 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 
-from utils import add_pos_bias, make_attn_linear
+from utils import add_pos_bias, make_attn_linear, freeze_weights
 
 task_to_keys = {
     "cola": ("sentence", None),
@@ -191,6 +191,10 @@ class ModelArguments:
     bias_base_type: str = field(
         default="",
         metadata={"help": "Type of bias"},
+    )
+    freeze: bool = field(
+        default=False,
+        metadata={"help": "Freeze weights expect Q,K,V or not"},
     )
 
 
@@ -361,7 +365,8 @@ def main():
         if model_args.pos_bias_type:
             model = add_pos_bias(model, config)
 
-    print(kwargs)
+    if model_args.freeze:
+        model = freeze_weights(model)
 
     # Preprocessing the raw_datasets
     if data_args.task_name is not None:

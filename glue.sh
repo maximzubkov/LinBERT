@@ -4,6 +4,7 @@ DATASET_NAME=mnli
 N_EPOCHS=3
 SEED=42
 IS_LINEAR=false
+FREEZE=false
 FEATURE_MAP=""
 PB_TYPE=""
 BIAS_TYPE=""
@@ -28,6 +29,10 @@ while (( "$#" )); do
       ;;
     --is_linear*)
       IS_LINEAR=true
+      shift
+      ;;
+    --freeze*)
+      FREEZE=true
       shift
       ;;
     --feature_map*)
@@ -92,4 +97,5 @@ python glue.py \
   --is_linear "$IS_LINEAR" \
   --feature_map "$FEATURE_MAP" \
   --pos_bias_type "$PB_TYPE" \
-  --bias_base_type "$BIAS_TYPE"
+  --bias_base_type "$BIAS_TYPE" \
+  --freeze "$FREEZE"
