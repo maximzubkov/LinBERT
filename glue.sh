@@ -78,6 +78,11 @@ then
     OUTPUT_DIR="$OUTPUT_DIR"-fft
 fi
 
+if $FREEZE
+then
+    OUTPUT_DIR="$OUTPUT_DIR"-freeze
+fi
+
 if [ "$DATASET_NAME" = "mrpc" ] || [ "$DATASET_NAME" = "wnli" ]
 then
     N_EPOCHS=5
