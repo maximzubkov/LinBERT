@@ -1,12 +1,15 @@
 import random
 from argparse import ArgumentParser
+from copy import deepcopy
 
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-from transformers import EvalPrediction
+from transformers import EvalPrediction, BertModel, BertConfig
 from transformers.trainer_utils import set_seed
 
 from configs import ModelConfig
+from models.linear_bert import LinBertSelfAttention
+from models.orig_bert import PosBiasBertSelfAttention
 
 
 def set_seed_(seed: int):
@@ -41,3 +44,58 @@ def parse_model_config(arg_parser: ArgumentParser) -> ModelConfig:
         pos_bias_type=args.pos_bias_type,
         bias_base_type=args.bias_base_type
     )
+
+
+def _copy_weights(input_, target):
+    input_.weight.data = target.weight.data
+    input_.bias.data = target.bias.data
+
+
+def _copy_self_attn(self_attn, target_self_attn):
+    _copy_weights(
+        input_=self_attn.query,
+        target=target_self_attn.query
+    )
+    _copy_weights(
+        input_=self_attn.value,
+        target=target_self_attn.value
+    )
+    _copy_weights(
+        input_=self_attn.key,
+        target=target_self_attn.key
+    )
+
+
+def make_attn_linear(model: BertModel, config: BertConfig):
+    tmp_model = deepcopy(model)
+
+    for i, _ in enumerate(tmp_model.bert.encoder.layer):
+        model.bert.encoder.layer[i].attention.self = LinBertSelfAttention(config)
+
+        _copy_self_attn(
+            self_attn=model.bert.encoder.layer[i].attention.self,
+            target_self_attn=tmp_model.bert.encoder.layer[i].attention.self
+        )
+    return model
+
+
+def add_pos_bias(model: BertModel, config: BertConfig):
+    tmp_model = deepcopy(model)
+
+    for i, _ in enumerate(tmp_model.bert.encoder.layer):
+        model.bert.encoder.layer[i].attention.self = PosBiasBertSelfAttention(config)
+
+        _copy_self_attn(
+            self_attn=model.bert.encoder.layer[i].attention.self,
+            target_self_attn=tmp_model.bert.encoder.layer[i].attention.self
+        )
+    return model
+
+
+def freeze_weights(model: BertModel):
+    for param in model.parameters():
+        param.requires_grad = False
+    for i, _ in enumerate(model.bert.encoder.layer):
+        for param in model.bert.encoder.layer[i].attention.parameters():
+            param.requires_grad = True
+    return model

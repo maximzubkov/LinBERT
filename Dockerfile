@@ -28,13 +28,8 @@ RUN pip install -r requirements.txt
 RUN python setup.py build_ext --inplace
 RUN pip install -e .
 
-ARG SSH_PRIVATE_KEY
-RUN mkdir /root/.ssh/
-RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
-RUN chmod 600 /root/.ssh/id_rsa
+ARG GIT_TOKEN
+RUN git config --global url."https://${GIT_TOKEN}:@github.com/".insteadOf "https://github.com/"
 
-RUN touch /root/.ssh/known_hosts
-RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
-
-RUN git clone git@github.com:maximzubkov/positional-bias.git
+RUN git clone https://github.com/maximzubkov/positional-bias.git
 RUN cd positional-bias && pip install -e .
