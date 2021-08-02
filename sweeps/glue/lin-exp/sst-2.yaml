@@ -14,10 +14,10 @@ command:
   - --overwrite_output_dir
   - --is_linear
   - --feature_map=exp
-  - --logging_step=50
+  - --logging_step=100
   - --evaluation_strategy=steps
-  - --eval_steps=100
-  - --save_steps=100
+  - --eval_steps=1000
+  - --save_steps=1000
   - ${args}
 method: bayes
 metric:
