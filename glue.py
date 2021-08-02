@@ -38,7 +38,7 @@ from transformers import (
     Trainer,
     TrainingArguments,
     default_data_collator,
-    set_seed,
+    set_seed, EarlyStoppingCallback,
 )
 from transformers.trainer_utils import get_last_checkpoint
 
@@ -503,6 +503,9 @@ def main():
         compute_metrics=compute_metrics,
         tokenizer=tokenizer,
         data_collator=data_collator,
+        callbacks=[
+            EarlyStoppingCallback(early_stopping_patience=4, early_stopping_threshold=0.0001)
+        ],
     )
 
     # Training
