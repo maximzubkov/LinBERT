@@ -221,9 +221,9 @@ def main():
     log_level = logging.INFO
     logger.setLevel(log_level)
     datasets.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.enable_default_handler()
-    transformers.utils.logging.enable_explicit_format()
+    transformers.logging.set_verbosity(log_level)
+    transformers.logging.enable_default_handler()
+    transformers.logging.enable_explicit_format()
 
     # Log on each process the small summary:
     logger.warning(
