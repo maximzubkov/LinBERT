@@ -1,26 +1,30 @@
 command:
   - python
   - glue.py
-  - --model_name_or_path bert-base-cased
-  - --task_name cola
+  - --model_name_or_path=bert-base-cased
+  - --task_name=cola
   - --do_train
   - --do_eval
-  - --seed 9
-  - --max_seq_length 128
-  - --per_device_train_batch_size 32
-  - --num_train_epochs 3
-  - --output_dir /tmp/cola
+  - --seed=9
+  - --max_seq_length=128
+  - --per_device_train_batch_size=32
+  - --load_best_model_at_end
+  - --num_train_epochs=3
+  - --output_dir=/tmp/cola
+  - --overwrite_output_dir
   - --is_linear
-  - --feature_map elu
-  - --pos_bias_type fft
-  - --bias_base_type full
-  - --logging_step 50
-  - --logging_step 100
+  - --feature_map=elu
+  - --pos_bias_type=fft
+  - --bias_base_type=full
+  - --logging_step=50
+  - --evaluation_strategy=steps
+  - --eval_steps=100
+  - --save_steps=100
   - ${args}
 method: bayes
 metric:
-  goal: maximize
-  name: eval/f1
+  goal: minimize
+  name: eval/loss
 parameters:
   warmup_ratio:
     values: [
