@@ -1,22 +1,26 @@
 command:
   - python
   - glue.py
-  - --model_name_or_path bert-base-cased
-  - --task_name wnli
+  - --model_name_or_path=bert-base-cased
+  - --task_name=wnli
   - --do_train
   - --do_eval
-  - --seed 9
-  - --max_seq_length 128
-  - --per_device_train_batch_size 32
-  - --num_train_epochs 5
-  - --output_dir /tmp/wnli
-  - --logging_step 50
-  - --logging_step 100
+  - --seed=9
+  - --max_seq_length=128
+  - --per_device_train_batch_size=32
+  - --load_best_model_at_end
+  - --num_train_epochs=5
+  - --output_dir=/tmp/wnli
+  - --overwrite_output_dir
+  - --logging_step=10
+  - --evaluation_strategy=steps
+  - --eval_steps=20
+  - --save_steps=20
   - ${args}
 method: bayes
 metric:
-  goal: maximize
-  name: eval/f1
+  goal: minimize
+  name: eval/loss
 parameters:
   warmup_ratio:
     values: [
