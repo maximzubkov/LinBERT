@@ -1,13 +1,16 @@
 import random
 from argparse import ArgumentParser
 from copy import deepcopy
+from os.path import join
 
 import numpy as np
+import torch
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-from transformers import EvalPrediction, BertModel, BertConfig
+from transformers import EvalPrediction, BertModel, BertConfig, BertTokenizerFast
 from transformers.trainer_utils import set_seed
 
-from configs import ModelConfig
+from configs import ModelConfig, mnist_config
+from models import Classifier
 from models.linear_bert import LinBertSelfAttention
 from models.orig_bert import PosBiasBertSelfAttention
 
@@ -99,3 +102,48 @@ def freeze_weights(model: BertModel):
         for param in model.bert.encoder.layer[i].attention.parameters():
             param.requires_grad = True
     return model
+
+
+def construct_model(
+    is_linear: bool = False,
+    feature_map: str = "elu",
+    pos_bias_type: str = None,
+    batch_size: int = None
+):
+    if pos_bias_type is not None:
+        model_config = ModelConfig(
+            is_linear=is_linear,
+            feature_map=feature_map,
+            pos_bias_type=pos_bias_type,
+            bias_base_type="full"
+        )
+    else:
+        model_config = ModelConfig(
+            is_linear=is_linear,
+            feature_map=feature_map,
+        )
+    data_path = "data"
+    dataset_name = "mnist"
+    seed = 9
+    x_shape, y_shape, n_channels = 28, 28, 1
+    set_seed_(seed)
+
+    output_path = join(data_path, dataset_name)
+    vocab_path = join(data_path, dataset_name)
+    tokenizer = BertTokenizerFast.from_pretrained(vocab_path)
+    vocab_size = tokenizer.vocab_size
+    config, args = mnist_config(
+        dataset_name=dataset_name,
+        output_path=output_path,
+        seed=seed,
+        is_test=False,
+        x_shape=x_shape,
+        y_shape=y_shape,
+        n_channels=n_channels,
+        vocab_size=vocab_size,
+        model_config=model_config
+    )
+
+    model = Classifier(config=config)
+    inputs = torch.LongTensor(batch_size, config.max_position_embeddings).random_(0, vocab_size)
+    return model, inputs
