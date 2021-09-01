@@ -108,7 +108,7 @@ def construct_model(
     is_linear: bool = False,
     feature_map: str = "elu",
     pos_bias_type: str = None,
-    batch_size: int = None
+    shape: int = None
 ):
     if pos_bias_type is not None:
         model_config = ModelConfig(
@@ -125,7 +125,6 @@ def construct_model(
     data_path = "data"
     dataset_name = "mnist"
     seed = 9
-    x_shape, y_shape, n_channels = 28, 28, 1
     set_seed_(seed)
 
     output_path = join(data_path, dataset_name)
@@ -137,13 +136,13 @@ def construct_model(
         output_path=output_path,
         seed=seed,
         is_test=False,
-        x_shape=x_shape,
-        y_shape=y_shape,
-        n_channels=n_channels,
+        x_shape=shape,
+        y_shape=shape,
+        n_channels=1,
         vocab_size=vocab_size,
         model_config=model_config
     )
 
     model = Classifier(config=config)
-    inputs = torch.LongTensor(batch_size, config.max_position_embeddings).random_(0, vocab_size)
+    inputs = torch.LongTensor(32, shape).random_(0, vocab_size)
     return model, inputs

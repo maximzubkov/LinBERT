@@ -1,8 +1,9 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
+from tqdm import tqdm
 
 from utils import construct_model
-import numpy as np
-import matplotlib.pyplot as plt
 
 data_path = "data"
 
@@ -11,28 +12,12 @@ def measure_eval_time(
     is_linear: bool = False,
     feature_map: str = "elu",
     pos_bias_type: str = None,
-    batches: tuple = (16, 32, 64, 128)
+    shapes: tuple = (32, 45, 55, 64)
 ):
     # Init logger
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    repetitions = 3000
-    timings = np.zeros((repetitions, len(batches)))
-    for i, batch_size in enumerate(batches):
-        model, inputs = construct_model(is_linear, feature_map, pos_bias_type, batch_size)
-
-        # GPU warm-up
-        for _ in range(10):
-            _ = model(inputs)
-
-        with torch.no_grad():
-            for rep in range(repetitions):
-                starter.record()
-                _ = model(inputs)
-                ender.record()
-
-                torch.cuda.synchronize()
-                curr_time = starter.elapsed_time(ender)
-                timings[rep, i] = curr_time
+    repetitions = 100
+    timings = np.zeros((repetitions, len(shapes)))
 
     output_name = ""
     if is_linear:
@@ -41,12 +26,31 @@ def measure_eval_time(
         output_name = "Transfromer"
     if pos_bias_type is not None:
         output_name = output_name + ", FFT"
+    print(output_name)
+
+    for i, max_len in enumerate(shapes):
+        model, inputs = construct_model(is_linear, feature_map, pos_bias_type, max_len)
+
+        # GPU warm-up
+        for _ in range(10):
+            _ = model(inputs)
+
+        with torch.no_grad():
+            for rep in tqdm(range(repetitions)):
+                starter.record()
+                _ = model(inputs)
+                ender.record()
+
+                torch.cuda.synchronize()
+                curr_time = starter.elapsed_time(ender)
+                timings[rep, i] = curr_time
+        print(f"\t{max_len * max_len}: {timings[:, i].mean()} ± {timings[:, i].std()}")
 
     # example data
     time = timings.mean(axis=0)
     time_err = timings.std(axis=0)
 
-    plt.errorbar(batches, time, yerr=time_err, label=output_name)
+    plt.errorbar([shape ** 2 for shape in shapes], time, yerr=time_err, label=output_name)
 
 
 if __name__ == "__main__":
@@ -58,7 +62,7 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(17, 12))
     plt.grid()
-    plt.xlabel("Batch Size", fontsize=20)
+    plt.xlabel("Num pixels", fontsize=20)
     plt.ylabel("Inference time", fontsize=20)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
