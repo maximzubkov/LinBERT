@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
+FROM nvidia/cuda:11.1-cudnn8-devel-ubuntu18.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -23,6 +23,7 @@ WORKDIR /LinBERT
 COPY . /LinBERT
 
 RUN python -m pip install --upgrade pip
+RUN pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip install -r requirements.txt
 
 RUN python setup.py build_ext --inplace
