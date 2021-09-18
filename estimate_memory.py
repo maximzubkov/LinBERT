@@ -1,3 +1,4 @@
+import torch
 from torch.profiler import profile, record_function, ProfilerActivity
 
 from utils import construct_model
@@ -12,9 +13,13 @@ def estimate_memory(
     model, inputs = construct_model(is_linear, feature_map, pos_bias_type, batch_size)
     model, inputs = model.cuda(), inputs.cuda()
 
-    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True) as prof:
-        with record_function("model_inference"):
-            model.bert(inputs)
+    for _ in range(10):
+        model.bert(inputs)
+
+    with torch.no_grad():
+        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True) as prof:
+            with record_function("model_inference"):
+                model.bert(inputs)
 
     print(prof.key_averages().table(sort_by="self_cpu_memory_usage"))
 
