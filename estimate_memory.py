@@ -8,12 +8,8 @@ def estimate_memory(
     is_linear: bool = False,
     feature_map: str = "elu",
     pos_bias_type: str = None,
-    batch_size: int = 32
+    shapes: tuple = (32, 45, 55, 64)
 ):
-    model, inputs = construct_model(is_linear, feature_map, pos_bias_type, batch_size)
-    model, inputs = model.cuda(), inputs.cuda()
-
-    output_name = ""
     if is_linear:
         output_name = f"Linear Transformer ({feature_map})"
     else:
@@ -22,15 +18,21 @@ def estimate_memory(
         output_name = output_name + ", FFT"
     print(output_name)
 
-    for _ in range(10):
-        model.bert(inputs)
+    for shape in shapes:
+        model, inputs = construct_model(is_linear, feature_map, pos_bias_type, shape)
+        model, inputs = model.cuda(), inputs.cuda()
 
-    with torch.no_grad():
-        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True) as prof:
-            with record_function("model_inference"):
-                model.bert(inputs)
+        for _ in range(10):
+            model.bert(inputs)
 
-    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=1))
+        with torch.no_grad():
+            with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True) as prof:
+                with record_function("model_inference"):
+                    model.bert(inputs)
+
+        stats = prof.key_averages().table(sort_by="cuda_time_total", row_limit=1)
+        gbs = -float(stats.split("\n")[-5].split()[-3])
+        print(f"\t{shape}: {gbs} Gb")
 
 
 if __name__ == "__main__":
