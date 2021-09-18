@@ -12,7 +12,7 @@ def estimate_memory(
     model, inputs = construct_model(is_linear, feature_map, pos_bias_type, batch_size)
     model, inputs = model.cuda(), inputs.cuda()
 
-    with profile(activities=[ProfilerActivity.CPU], record_shapes=True, profile_memory=True) as prof:
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True) as prof:
         with record_function("model_inference"):
             model.bert(inputs)
 
