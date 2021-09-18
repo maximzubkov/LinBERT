@@ -30,7 +30,7 @@ def estimate_memory(
             with record_function("model_inference"):
                 model.bert(inputs)
 
-    print(prof.key_averages().table(sort_by="self_cpu_memory_usage"))
+    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=1))
 
 
 if __name__ == "__main__":
