@@ -13,6 +13,15 @@ def estimate_memory(
     model, inputs = construct_model(is_linear, feature_map, pos_bias_type, batch_size)
     model, inputs = model.cuda(), inputs.cuda()
 
+    output_name = ""
+    if is_linear:
+        output_name = f"Linear Transformer ({feature_map})"
+    else:
+        output_name = "Transformer"
+    if pos_bias_type is not None:
+        output_name = output_name + ", FFT"
+    print(output_name)
+
     for _ in range(10):
         model.bert(inputs)
 

@@ -21,9 +21,9 @@ def measure_eval_time(
 
     output_name = ""
     if is_linear:
-        output_name = f"Linear Transfromer ({feature_map})"
+        output_name = f"Linear Transformer ({feature_map})"
     else:
-        output_name = "Transfromer"
+        output_name = "Transformer"
     if pos_bias_type is not None:
         output_name = output_name + ", FFT"
     print(output_name)
