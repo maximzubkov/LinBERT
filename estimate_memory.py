@@ -8,7 +8,7 @@ def estimate_memory(
     is_linear: bool = False,
     feature_map: str = "elu",
     pos_bias_type: str = None,
-    shapes: tuple = (32, 45, 55, 64)
+    shapes: tuple = (16, 24, 32, 40, 48, 50)
 ):
     if is_linear:
         output_name = f"Linear Transformer ({feature_map})"

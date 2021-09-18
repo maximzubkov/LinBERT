@@ -19,7 +19,6 @@ def measure_eval_time(
     repetitions = 150
     timings = np.zeros((repetitions, len(shapes)))
 
-    output_name = ""
     if is_linear:
         output_name = f"Linear Transformer ({feature_map})"
     else:
@@ -46,27 +45,8 @@ def measure_eval_time(
                 timings[rep, i] = curr_time
         print(f"\t{max_len * max_len}: {timings[:, i].mean()} ± {timings[:, i].std()}")
 
-    # example data
-    time = timings.mean(axis=0)
-    time_err = timings.std(axis=0)
-
-    plt.errorbar([shape ** 2 for shape in shapes], time, yerr=time_err, label=output_name)
-
 
 if __name__ == "__main__":
-    plt.rcParams.update({
-        "text.usetex": True,
-        "font.family": "serif",
-        "font.serif": ["Palatino"],
-    })
-
-    plt.figure(figsize=(17, 12))
-    plt.grid()
-    plt.xlabel("Num pixels", fontsize=20)
-    plt.ylabel("Inference time", fontsize=20)
-    plt.xticks(fontsize=15)
-    plt.yticks(fontsize=15)
-
     measure_eval_time(is_linear=True, feature_map="exp")
     measure_eval_time(is_linear=True, feature_map="elu")
     measure_eval_time(is_linear=True, feature_map="dpfp")
@@ -77,6 +57,3 @@ if __name__ == "__main__":
     measure_eval_time(is_linear=True, feature_map="favor", pos_bias_type="fft_2d")
     measure_eval_time(is_linear=False)
     measure_eval_time(is_linear=False, pos_bias_type="fft_2d")
-
-    plt.legend(fontsize=15)
-    plt.savefig("fig.pdf", format="pdf")
