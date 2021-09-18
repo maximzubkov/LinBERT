@@ -12,11 +12,11 @@ def measure_eval_time(
     is_linear: bool = False,
     feature_map: str = "elu",
     pos_bias_type: str = None,
-    shapes: tuple = (32, 45, 55, 64)
+    shapes: tuple = (16, 24, 32, 40, 48, 50)
 ):
     # Init logger
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    repetitions = 100
+    repetitions = 150
     timings = np.zeros((repetitions, len(shapes)))
 
     output_name = ""
