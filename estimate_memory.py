@@ -31,8 +31,11 @@ def estimate_memory(
                     model.bert(inputs)
 
         stats = prof.key_averages().table(sort_by="cuda_time_total", row_limit=1)
-        gbs = -float(stats.split("\n")[-5].split()[-3])
-        print(f"\t{shape}: {gbs} Gb")
+        parts = stats.split("\n")[-5].split()
+        mem = -float(parts[-3])
+        if parts[-2] == "Mb":
+            mem = mem / 1000
+        print(f"\t{shape}: {mem} Gb")
 
 
 if __name__ == "__main__":
