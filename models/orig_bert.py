@@ -89,5 +89,4 @@ class OrigBertModel(BertModel):
         super().__init__(config)
 
         for i, _ in enumerate(self.encoder.layer):
-            print(config)
             self.encoder.layer[i].attention.self = PosBiasBertSelfAttention(config)
