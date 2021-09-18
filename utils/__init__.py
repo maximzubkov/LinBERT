@@ -146,5 +146,5 @@ def construct_model(
     config.hidden_size = 256
     config.num_layers = 6
     model = Classifier(config=config)
-    inputs = torch.LongTensor(32, config.max_position_embeddings).random_(0, vocab_size)
+    inputs = torch.LongTensor(6, config.max_position_embeddings).random_(0, vocab_size)
     return model, inputs
