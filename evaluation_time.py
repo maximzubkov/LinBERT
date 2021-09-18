@@ -27,8 +27,9 @@ def measure_eval_time(
         output_name = output_name + ", FFT"
     print(output_name)
 
-    for i, max_len in enumerate(shapes):
-        model, inputs = construct_model(is_linear, feature_map, pos_bias_type, max_len)
+    for i, shape in enumerate(shapes):
+        model, inputs = construct_model(is_linear, feature_map, pos_bias_type, shape)
+        model, inputs = model.cuda(), inputs.cuda()
 
         # GPU warm-up
         for _ in range(10):
@@ -43,7 +44,7 @@ def measure_eval_time(
                 torch.cuda.synchronize()
                 curr_time = starter.elapsed_time(ender)
                 timings[rep, i] = curr_time
-        print(f"\t{max_len * max_len}: {timings[:, i].mean()} ± {timings[:, i].std()}")
+        print(f"\t{shape * shape}: {timings[:, i].mean()} ± {timings[:, i].std()}")
 
 
 if __name__ == "__main__":
